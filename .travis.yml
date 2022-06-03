@@ -1,0 +1,24 @@
+sudo: required
+dist: focal
+language: go
+go:
+  - 1.16.x
+before_install:
+  -
+script:
+  - |
+    echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USER}" --password-stdin
+    if [ "${TRAVIS_BRANCH}" == "main" ]; then
+      export DOCKER_HUB_PX_OBJECT_CONTROLLER_TEST_TAG=main
+    else
+      export DOCKER_HUB_PX_OBJECT_CONTROLLER_TEST_TAG=`git rev-parse --short HEAD`
+    fi
+    export DOCKER_HUB_PX_OBJECT_CONTROLLER_TAG=${TRAVIS_BRANCH}-`git rev-parse --short HEAD`
+    make all test container setup-travis integration-test-suite &&
+    if [ "${TRAVIS_PULL_REQUEST}" == "false" ]; then
+      make deploy;
+    fi
+notifications:
+  email:
+    on_success: always
+    on_failure: always
