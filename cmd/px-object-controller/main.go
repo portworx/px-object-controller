@@ -2,11 +2,16 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/kubernetes-csi/csi-lib-utils/leaderelection"
+	"github.com/libopenstorage/openstorage/api/server/sdk"
+	"github.com/libopenstorage/openstorage/bucket"
+	"github.com/libopenstorage/openstorage/bucket/drivers/fake"
 	"github.com/libopenstorage/openstorage/pkg/correlation"
 	"github.com/portworx/px-object-controller/pkg/controller"
 	"github.com/portworx/px-object-controller/pkg/version"
@@ -27,6 +32,9 @@ const (
 	envLeaderElectionLeaseDuration = "ENABLE_LEADER_ELECTION_LEASE_DURATION"
 	envLeaderElectionRenewDeadline = "ENABLE_LEADER_ELECTION_RENEW_DEADLINE"
 	envLeaderElectionRetryPeriod   = "ENABLE_LEADER_ELECTION_RETRY_PERIOD"
+	envSDKPort                     = "SDK_PORT"
+	envRestPort                    = "REST_PORT"
+	envBucketDriver                = "BUCKET_DRIVER"
 )
 
 var (
@@ -41,6 +49,9 @@ var (
 	leaderElectionLeaseDuration = 15 * time.Second
 	leaderElectionRenewDeadline = 10 * time.Second
 	leaderElectionRetryPeriod   = 5 * time.Second
+	sdkPort                     = "18020"
+	restPort                    = "18021"
+	bucketDriverType            = "fake"
 )
 
 func parseFlags() error {
@@ -55,6 +66,9 @@ func parseFlags() error {
 	y.Duration(&leaderElectionRenewDeadline, envLeaderElectionRenewDeadline, "Duration, in seconds, that the acting leader will retry refreshing leadership before giving up. Defaults to 10 seconds.")
 	y.Duration(&leaderElectionRetryPeriod, envLeaderElectionRetryPeriod, "Duration, in seconds, the LeaderElector clients should wait between tries of actions. Defaults to 5 seconds.")
 	y.Int(&threads, envWorkerThreads, "Number of worker threads.")
+	y.String(&sdkPort, envSDKPort, "Openstorage SDK server port")
+	y.String(&restPort, envRestPort, "Openstorage REST server port")
+	y.String(&bucketDriverType, envBucketDriver, "Openstorage bucket driver to use. Choices: fake, s3")
 
 	return y.ParseEnv()
 }
@@ -91,6 +105,39 @@ func main() {
 		logrus.Fatalf("failed to initialize billing sink: %v", err)
 	}
 
+	// Create and start bucket driver
+	// TODO support multiple drivers
+	var bucketDriver bucket.BucketDriver
+	bucketDriverType = strings.ToLower(bucketDriverType)
+	switch bucketDriverType {
+	case "fake":
+		bucketDriver = fake.New()
+	case "s3":
+		// TODO GG
+	default:
+		logrus.Fatalf("invalid bucket driver type. Valid driver types are: fake, s3")
+	}
+	go func() {
+		if err := bucketDriver.Start(); err != http.ErrServerClosed {
+			logrus.Errorf("failed to start driver %s: %v", bucketDriver.String(), err)
+		}
+	}()
+
+	// Create SDK object and start in background
+	sdkSocket := "/var/lib/osd/driver/sdk.sock"
+	os.Remove(sdkSocket)
+	sdkServer, err := sdk.New(&sdk.ServerConfig{
+		Net:      "tcp",
+		Address:  ":" + sdkPort,
+		RestPort: restPort,
+		Socket:   sdkSocket,
+	})
+	if err != nil {
+		logrus.Fatalf("failed to start SDK server for driver: %v", err)
+	}
+	sdkServer.UseBucketDrivers(bucketDriver)
+	go sdkServer.Start()
+
 	// Create controller object
 	ctrl, err := controller.New(&controller.Config{})
 	if err != nil {
@@ -98,13 +145,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Callback to start controller in goroutine
+	// Callback to start controller & sdk in goroutine
 	run := func(context.Context) {
-		// run...
+		// Run controller
 		stopCh := make(chan struct{})
 		go ctrl.Run(threads, stopCh)
 
-		// ...until SIGINT
+		// Until SIGINT
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 		<-c

@@ -3,21 +3,25 @@ module github.com/portworx/px-object-controller
 go 1.16
 
 require (
+	github.com/containerd/containerd v1.6.6 // indirect
+	github.com/containerd/continuity v0.3.0 // indirect
+	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/kubernetes-csi/csi-lib-utils v0.11.0
-	github.com/libopenstorage/openstorage v8.0.1-0.20190926212733-daaed777713e+incompatible
+	github.com/libopenstorage/openstorage v9.4.17+incompatible
+	github.com/opencontainers/runc v1.1.3 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.2-0.20220317124727-77977386932a // indirect
 	github.com/zoido/yag-config v0.4.0
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
-	k8s.io/api v0.22.0
-	k8s.io/apimachinery v0.20.4
+	k8s.io/api v0.22.5
+	k8s.io/apimachinery v0.22.5
 	k8s.io/client-go v12.0.0+incompatible
 )
 
 replace (
 	github.com/kubernetes-incubator/external-storage => github.com/libopenstorage/external-storage v5.1.1-0.20190919185747-9394ee8dd536+incompatible
-	github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220310032830-99180ba7316e
+	github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220608215924-d8e6f0feea09
 
 	// Replacing k8s.io dependencies is required if a dependency or any dependency of a dependency
 	// depends on k8s.io/kubernetes. See https://github.com/kubernetes/kubernetes/issues/79384#issuecomment-505725449
