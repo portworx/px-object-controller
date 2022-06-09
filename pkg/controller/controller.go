@@ -12,6 +12,7 @@ var (
 	logger = correlation.NewPackageLogger(componentNameController)
 )
 
+// Config represents a configuration for creating a controller server
 type Config struct {
 }
 
