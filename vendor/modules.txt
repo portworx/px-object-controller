@@ -241,6 +241,7 @@ github.com/pborman/uuid
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
 # github.com/portworx/kvdb v0.0.0-20200723230726-2734b7f40194
+## explicit
 github.com/portworx/kvdb
 github.com/portworx/kvdb/common
 github.com/portworx/kvdb/mem

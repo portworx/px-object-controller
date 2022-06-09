@@ -9,6 +9,7 @@ require (
 	github.com/kubernetes-csi/csi-lib-utils v0.11.0
 	github.com/libopenstorage/openstorage v9.4.17+incompatible
 	github.com/opencontainers/runc v1.1.3 // indirect
+	github.com/portworx/kvdb v0.0.0-20200723230726-2734b7f40194
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.2-0.20220317124727-77977386932a // indirect
 	github.com/zoido/yag-config v0.4.0
