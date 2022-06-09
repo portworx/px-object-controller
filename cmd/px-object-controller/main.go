@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -13,6 +14,8 @@ import (
 	"github.com/libopenstorage/openstorage/bucket"
 	"github.com/libopenstorage/openstorage/bucket/drivers/fake"
 	"github.com/libopenstorage/openstorage/pkg/correlation"
+	"github.com/libopenstorage/openstorage/pkg/storagepolicy"
+	"github.com/portworx/kvdb"
 	"github.com/portworx/px-object-controller/pkg/controller"
 	"github.com/portworx/px-object-controller/pkg/version"
 	"github.com/sirupsen/logrus"
@@ -124,13 +127,30 @@ func main() {
 	}()
 
 	// Create SDK object and start in background
+	u, err := url.Parse("kv-mem://localhost")
+	scheme := u.Scheme
+	kv, err := kvdb.New(scheme, "openstorage", []string{u.String()}, nil, kvdb.LogFatalErrorCB)
+	if err != nil {
+		logrus.Fatalf("failed to initialize kvdb: %v", err)
+	}
+	if err := kvdb.SetInstance(kv); err != nil {
+		logrus.Fatalf("failed set kvdb instance: %v", err)
+	}
+	sp, err := storagepolicy.Init()
+	if err != nil {
+		logrus.Fatalf("failed to initialize storage policy: %v", err)
+	}
 	sdkSocket := "/var/lib/osd/driver/sdk.sock"
 	os.Remove(sdkSocket)
+	if err := os.MkdirAll("/var/lib/osd/driver", 0750); err != nil {
+		logrus.Fatalf("failed to initialize sdk socket location: %v", err)
+	}
 	sdkServer, err := sdk.New(&sdk.ServerConfig{
-		Net:      "tcp",
-		Address:  ":" + sdkPort,
-		RestPort: restPort,
-		Socket:   sdkSocket,
+		Net:           "tcp",
+		Address:       ":" + sdkPort,
+		RestPort:      restPort,
+		Socket:        sdkSocket,
+		StoragePolicy: sp,
 	})
 	if err != nil {
 		logrus.Fatalf("failed to start SDK server for driver: %v", err)

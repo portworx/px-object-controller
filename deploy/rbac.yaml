@@ -1,0 +1,55 @@
+# RBAC file for the maas controller.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: px-object-controller
+  namespace: kube-system
+
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: px-object-controller
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: px-object-controller
+subjects:
+  - kind: ServiceAccount
+    name: px-object-controller
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: px-object-controller
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: px-object-controller
+  namespace: kube-system
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "watch", "list", "delete", "update", "create"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["list", "watch", "create", "update", "patch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: px-object-controller
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: px-object-controller
+roleRef:
+  kind: Role
+  name: px-object-controller
+  apiGroup: rbac.authorization.k8s.io
