@@ -44,7 +44,7 @@ var (
 	kubeconfig                  string
 	controllerNamespace         = "kube-system"
 	logLevel                    = "debug"
-	threads                     = 10
+	workers                     = 4
 	usageInterval               = 5 * time.Second
 	collectorSource             = "fake"
 	leaderElection              = true
@@ -68,7 +68,7 @@ func parseFlags() error {
 	y.Duration(&leaderElectionLeaseDuration, envLeaderElectionLeaseDuration, "Duration, in seconds, that non-leader candidates will wait to force acquire leadership. Defaults to 15 seconds.")
 	y.Duration(&leaderElectionRenewDeadline, envLeaderElectionRenewDeadline, "Duration, in seconds, that the acting leader will retry refreshing leadership before giving up. Defaults to 10 seconds.")
 	y.Duration(&leaderElectionRetryPeriod, envLeaderElectionRetryPeriod, "Duration, in seconds, the LeaderElector clients should wait between tries of actions. Defaults to 5 seconds.")
-	y.Int(&threads, envWorkerThreads, "Number of worker threads.")
+	y.Int(&workers, envWorkerThreads, "Number of worker threads.")
 	y.String(&sdkPort, envSDKPort, "Openstorage SDK server port")
 	y.String(&restPort, envRestPort, "Openstorage REST server port")
 	y.String(&bucketDriverType, envBucketDriver, "Openstorage bucket driver to use. Choices: fake, s3")
@@ -169,7 +169,7 @@ func main() {
 	run := func(context.Context) {
 		// Run controller
 		stopCh := make(chan struct{})
-		go ctrl.Run(threads, stopCh)
+		go ctrl.Run(workers, stopCh)
 
 		// Until SIGINT
 		c := make(chan os.Signal, 1)
