@@ -17,24 +17,19 @@
 set -o errexit
 set -o nounset
 set -o pipefail
+set -x
 
 SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
-CODE_GENERATOR_BASE=${GOPATH}/src/kubernetes
+CODE_GENERATOR_BASE=${GOPATH}/src/k8s.io
 CODE_GENERATOR_PATH=${CODE_GENERATOR_BASE}/code-generator
-if [ ! -d "$CODE_GENERATOR_PATH" ]; then
-    mkdir -p $CODE_GENERATOR_BASE
-    git clone git@github.com:kubernetes/code-generator.git $CODE_GENERATOR_PATH
-
-fi
 
 # generate the code with:
 # --output-base    because this script should also be able to run inside the vendor dir of
 #                  k8s.io/kubernetes. The output-base is needed for the generators to output into the vendor dir
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
-bash "${CODE_GENERATOR_PATH}"/generate-groups.sh "deepcopy,client,informer,lister" \
+bash "${CODE_GENERATOR_PATH}"/generate-groups.sh "deepcopy,client,lister,informer" \
   github.com/portworx/px-object-controller/client github.com/portworx/px-object-controller/client/apis \
   pxobjectservice:v1alpha1 \
-  --output-base "$(dirname "${BASH_SOURCE[0]}")/../../.." \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
 
 

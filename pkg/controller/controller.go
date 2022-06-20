@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/libopenstorage/openstorage/pkg/correlation"
-	storagelisters "github.com/portworx/px-object-controller/client/listers/volumesnapshot/v1"
+	bucketlisters "github.com/portworx/px-object-controller/client/listers/pxobjectservice/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -23,19 +23,16 @@ var (
 type Config struct {
 }
 
-// Server represents a controller server
+// Controller represents a controller server
 type Controller struct {
 	config *Config
 
 	// clientset   clientset.Interface
 	client      kubernetes.Interface
-	objectQueue workqueue.RateLimitingInterface
-	accessQueue workqueue.RateLimitingInterface
+	bucketQueue workqueue.RateLimitingInterface
 
-	bucketLister       storagelisters.VolumeSnapshotLister
+	bucketLister       bucketlisters.PXBucketClaimLister
 	bucketListerSynced cache.InformerSynced
-	accessLister       storagelisters.VolumeSnapshotContentLister
-	accessListerSynced cache.InformerSynced
 }
 
 // New returns a new controller server
@@ -49,7 +46,6 @@ func New(cfg *Config) (*Controller, error) {
 func (ctrl *Controller) Run(workers int, stopCh chan struct{}) {
 	for i := 0; i < workers; i++ {
 		go wait.Until(ctrl.bucketWorker, 0, stopCh)
-		go wait.Until(ctrl.accessWorker, 0, stopCh)
 	}
 
 	<-stopCh
@@ -57,40 +53,25 @@ func (ctrl *Controller) Run(workers int, stopCh chan struct{}) {
 
 // bucketWorker is the main worker for PXBucketClaims.
 func (ctrl *Controller) bucketWorker() {
-	keyObj, quit := ctrl.snapshotQueue.Get()
+	keyObj, quit := ctrl.bucketQueue.Get()
 	if quit {
 		return
 	}
-	defer ctrl.snapshotQueue.Done(keyObj)
+	defer ctrl.bucketQueue.Done(keyObj)
 
-	if err := ctrl.syncSnapshotByKey(keyObj.(string)); err != nil {
+	if err := ctrl.syncBucketByKey(keyObj.(string)); err != nil {
 		// Rather than wait for a full resync, re-add the key to the
 		// queue to be processed.
-		ctrl.snapshotQueue.AddRateLimited(keyObj)
-		klog.V(4).Infof("Failed to sync snapshot %q, will retry again: %v", keyObj.(string), err)
+		ctrl.bucketQueue.AddRateLimited(keyObj)
+		klog.V(4).Infof("Failed to sync bucket %q, will retry again: %v", keyObj.(string), err)
 	} else {
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
-		ctrl.snapshotQueue.Forget(keyObj)
+		ctrl.bucketQueue.Forget(keyObj)
 	}
 }
 
-// bucketWorker is the main worker for PXBucketClaims.
-func (ctrl *Controller) accessWorker() {
-	keyObj, quit := ctrl.snapshotQueue.Get()
-	if quit {
-		return
-	}
-	defer ctrl.snapshotQueue.Done(keyObj)
+func (ctrl *Controller) syncBucketByKey(key string) error {
 
-	if err := ctrl.syncSnapshotByKey(keyObj.(string)); err != nil {
-		// Rather than wait for a full resync, re-add the key to the
-		// queue to be processed.
-		ctrl.snapshotQueue.AddRateLimited(keyObj)
-		klog.V(4).Infof("Failed to sync snapshot %q, will retry again: %v", keyObj.(string), err)
-	} else {
-		// Finally, if no error occurs we Forget this item so it does not
-		// get queued again until another change happens.
-		ctrl.snapshotQueue.Forget(keyObj)
-	}
+	return nil
 }

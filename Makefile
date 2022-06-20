@@ -38,7 +38,7 @@ GO_FILES := $(shell find . -name '*.go' | grep -v vendor | \
                                    grep -v '\.pb\.gw\.go' | \
                                    grep -v 'externalversions' | \
                                    grep -v 'versioned' | \
-                                   grep -v 'generated')
+                                   grep -v 'client')
 
 ifeq ($(BUILD_TYPE),debug)
 BUILDFLAGS += -gcflags "-N -l"
@@ -168,7 +168,7 @@ integration-test-suite: kind-setup integration-test kind-teardown
 
 codegen:
 	@echo "Generating CRD"
-	(GOFLAGS="" hack/update-codegen.sh)
+	(GOFLAGS="" client/hack/update-codegen.sh)
 
 px-object-controller:
 	@echo "Building the cluster px-object-controller binary"
