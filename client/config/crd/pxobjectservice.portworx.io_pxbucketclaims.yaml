@@ -31,6 +31,22 @@ spec:
             type: string
           metadata:
             type: object
+          spec:
+            description: spec defines the desired characteristics of a bucket requested by a user. Required.
+            properties:
+              bucketClassName:
+                description: BucketClassName is the name of the PXBucketClass requested by the PXBucketClaim. Required.
+                type: string
+            type: object
+          status:
+            description: status represents the current information of a bucket.
+            properties:
+              bucketClassName:
+                description: BucketClassName is the name of the PXBucketClass requested by the PXBucketClaim. Required.
+                type: string
+            type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
