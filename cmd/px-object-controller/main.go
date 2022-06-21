@@ -22,7 +22,7 @@ import (
 	"github.com/zoido/yag-config"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -38,6 +38,9 @@ const (
 	envSDKPort                     = "SDK_PORT"
 	envRestPort                    = "REST_PORT"
 	envBucketDriver                = "BUCKET_DRIVER"
+	envResyncPeriod                = "RESYNC_PERIOD"
+	envRetryIntervalStart          = "RETRY_INTERVAL_START"
+	envRetryIntervalMax            = "RETRY_INTERVAL_MAX"
 )
 
 var (
@@ -45,8 +48,6 @@ var (
 	controllerNamespace         = "kube-system"
 	logLevel                    = "debug"
 	workers                     = 4
-	usageInterval               = 5 * time.Second
-	collectorSource             = "fake"
 	leaderElection              = true
 	leaderElectionNamespace     string
 	leaderElectionLeaseDuration = 15 * time.Second
@@ -55,6 +56,9 @@ var (
 	sdkPort                     = "18020"
 	restPort                    = "18021"
 	bucketDriverType            = "fake"
+	resyncPeriod                = 15 * time.Minute
+	retryIntervalStart          = 1 * time.Second
+	retryIntervalMax            = 5 * time.Minute
 )
 
 func parseFlags() error {
@@ -72,6 +76,9 @@ func parseFlags() error {
 	y.String(&sdkPort, envSDKPort, "Openstorage SDK server port")
 	y.String(&restPort, envRestPort, "Openstorage REST server port")
 	y.String(&bucketDriverType, envBucketDriver, "Openstorage bucket driver to use. Choices: fake, s3")
+	y.Duration(&resyncPeriod, envResyncPeriod, "Resync interval of the controller.")
+	y.Duration(&retryIntervalStart, envRetryIntervalStart, "Initial retry interval of failed bucket creation/access or deletion/revoke. It doubles with each failure, up to retry-interval-max. Default is 1 second.")
+	y.Duration(&retryIntervalMax, envRetryIntervalMax, "Maximum retry interval of failed bucket/access creation or deletion/revoke. Default is 5 minutes.")
 
 	return y.ParseEnv()
 }
@@ -91,18 +98,6 @@ func main() {
 		os.Exit(1)
 	}
 	logrus.SetLevel(lvl)
-
-	// Create the client config. Use kubeconfig if given, otherwise assume in-cluster.
-	config, err := buildConfig(kubeconfig)
-	if err != nil {
-		logrus.Error(err.Error())
-		os.Exit(1)
-	}
-	k8sClient, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		logrus.Fatalf("failed to create leaderelection client: %v", err)
-	}
-	_ = k8sClient
 
 	if err != nil {
 		logrus.Fatalf("failed to initialize billing sink: %v", err)
@@ -159,7 +154,9 @@ func main() {
 	go sdkServer.Start()
 
 	// Create controller object
-	ctrl, err := controller.New(&controller.Config{})
+	ctrl, err := controller.New(&controller.Config{
+		SdkUDS: sdkSocket,
+	})
 	if err != nil {
 		logrus.Error(err.Error())
 		os.Exit(1)
@@ -186,6 +183,10 @@ func main() {
 		lockName := "px-object-controller-leader"
 		// Create a new clientset for leader election to prevent throttling
 		// due to px controller
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			klog.Fatalf("failed to get in cluster config: %v", err)
+		}
 		leClientset, err := kubernetes.NewForConfig(config)
 		if err != nil {
 			logrus.Fatalf("failed to create leaderelection client: %v", err)
@@ -202,11 +203,4 @@ func main() {
 			logrus.Fatalf("failed to initialize leader election: %v", err)
 		}
 	}
-}
-
-func buildConfig(kubeconfig string) (*rest.Config, error) {
-	if kubeconfig != "" {
-		return clientcmd.BuildConfigFromFlags("", kubeconfig)
-	}
-	return rest.InClusterConfig()
 }
