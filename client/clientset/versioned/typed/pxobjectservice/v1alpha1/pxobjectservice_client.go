@@ -13,6 +13,7 @@ import (
 type PxobjectserviceV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	PXBucketClaimsGetter
+	PXBucketClassesGetter
 }
 
 // PxobjectserviceV1alpha1Client is used to interact with features provided by the pxobjectservice.portworx.io group.
@@ -22,6 +23,10 @@ type PxobjectserviceV1alpha1Client struct {
 
 func (c *PxobjectserviceV1alpha1Client) PXBucketClaims(namespace string) PXBucketClaimInterface {
 	return newPXBucketClaims(c, namespace)
+}
+
+func (c *PxobjectserviceV1alpha1Client) PXBucketClasses() PXBucketClassInterface {
+	return newPXBucketClasses(c)
 }
 
 // NewForConfig creates a new PxobjectserviceV1alpha1Client for the given config.

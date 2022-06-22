@@ -15,7 +15,3 @@ bash "${CODE_GENERATOR_PATH}"/generate-groups.sh "deepcopy,client,lister,informe
   github.com/portworx/px-object-controller/client github.com/portworx/px-object-controller/client/apis \
   pxobjectservice:v1alpha1 \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
-
-
-# To use your own boilerplate text append:
-#   --go-header-file "${SCRIPT_ROOT}"/hack/custom-boilerplate.go.txt

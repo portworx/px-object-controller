@@ -16,6 +16,10 @@ func (c *FakePxobjectserviceV1alpha1) PXBucketClaims(namespace string) v1alpha1.
 	return &FakePXBucketClaims{c, namespace}
 }
 
+func (c *FakePxobjectserviceV1alpha1) PXBucketClasses() v1alpha1.PXBucketClassInterface {
+	return &FakePXBucketClasses{c}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakePxobjectserviceV1alpha1) RESTClient() rest.Interface {

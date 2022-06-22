@@ -24,6 +24,7 @@ type PXBucketClaimsGetter interface {
 type PXBucketClaimInterface interface {
 	Create(ctx context.Context, pXBucketClaim *v1alpha1.PXBucketClaim, opts v1.CreateOptions) (*v1alpha1.PXBucketClaim, error)
 	Update(ctx context.Context, pXBucketClaim *v1alpha1.PXBucketClaim, opts v1.UpdateOptions) (*v1alpha1.PXBucketClaim, error)
+	UpdateStatus(ctx context.Context, pXBucketClaim *v1alpha1.PXBucketClaim, opts v1.UpdateOptions) (*v1alpha1.PXBucketClaim, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.PXBucketClaim, error)
@@ -112,6 +113,22 @@ func (c *pXBucketClaims) Update(ctx context.Context, pXBucketClaim *v1alpha1.PXB
 		Namespace(c.ns).
 		Resource("pxbucketclaims").
 		Name(pXBucketClaim.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(pXBucketClaim).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *pXBucketClaims) UpdateStatus(ctx context.Context, pXBucketClaim *v1alpha1.PXBucketClaim, opts v1.UpdateOptions) (result *v1alpha1.PXBucketClaim, err error) {
+	result = &v1alpha1.PXBucketClaim{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("pxbucketclaims").
+		Name(pXBucketClaim.Name).
+		SubResource("status").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(pXBucketClaim).
 		Do(ctx).

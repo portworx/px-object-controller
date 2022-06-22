@@ -10,6 +10,8 @@ import (
 type Interface interface {
 	// PXBucketClaims returns a PXBucketClaimInformer.
 	PXBucketClaims() PXBucketClaimInformer
+	// PXBucketClasses returns a PXBucketClassInformer.
+	PXBucketClasses() PXBucketClassInformer
 }
 
 type version struct {
@@ -26,4 +28,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // PXBucketClaims returns a PXBucketClaimInformer.
 func (v *version) PXBucketClaims() PXBucketClaimInformer {
 	return &pXBucketClaimInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// PXBucketClasses returns a PXBucketClassInformer.
+func (v *version) PXBucketClasses() PXBucketClassInformer {
+	return &pXBucketClassInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
