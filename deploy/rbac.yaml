@@ -17,7 +17,7 @@ rules:
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["list", "watch", "create", "update", "patch"]
-  - apiGroups: ["pxobjectservice.portworx.io"]
+  - apiGroups: ["objectservice.portworx.io"]
     resources: ["pxbucketclaims", "pxbucketclasses"]
     verbs: ["list", "watch", "create", "update", "patch", "get"] 
 ---
