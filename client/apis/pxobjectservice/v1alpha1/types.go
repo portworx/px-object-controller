@@ -60,7 +60,7 @@ type BucketClaimStatus struct {
 
 // PXBucketClass is a user's template for a bucket
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:shortName=pbclass
+// +kubebuilder:resource:scope=Cluster,shortName=pbclass
 // +groupName=pxobjectservice.portworx.io
 type PXBucketClass struct {
 	metav1.TypeMeta `json:",inline"`

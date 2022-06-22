@@ -18,8 +18,8 @@ rules:
     resources: ["events"]
     verbs: ["list", "watch", "create", "update", "patch"]
   - apiGroups: ["pxobjectservice.portworx.io"]
-    resources: ["pxbucketclaims"]
-    verbs: ["list", "watch", "create", "update", "patch"] 
+    resources: ["pxbucketclaims", "pxbucketclasses"]
+    verbs: ["list", "watch", "create", "update", "patch", "get"] 
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

@@ -161,6 +161,12 @@ func (ctrl *Controller) processBucket(ctx context.Context, key string) error {
 	if err == nil {
 		var bucketClass *crdv1alpha1.PXBucketClass
 		if bucketClaim.Spec.BucketClassName != nil {
+			list, err := ctrl.k8sBucketClient.PxobjectserviceV1alpha1().PXBucketClasses().List(ctx, metav1.ListOptions{})
+			if err != nil {
+				return err
+			}
+			logrus.Infof("GG list %v", list)
+
 			bucketClass, err = ctrl.k8sBucketClient.PxobjectserviceV1alpha1().PXBucketClasses().Get(ctx, *bucketClaim.Spec.BucketClassName, metav1.GetOptions{})
 			if err != nil {
 				return err
