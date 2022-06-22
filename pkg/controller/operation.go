@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/libopenstorage/openstorage/api"
-	crdv1alpha1 "github.com/portworx/px-object-controller/client/apis/pxobjectservice/v1alpha1"
+	crdv1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 )
 
 func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim) {

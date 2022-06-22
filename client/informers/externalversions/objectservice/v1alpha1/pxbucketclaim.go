@@ -6,10 +6,10 @@ import (
 	"context"
 	time "time"
 
-	pxobjectservicev1alpha1 "github.com/portworx/px-object-controller/client/apis/pxobjectservice/v1alpha1"
+	objectservicev1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	versioned "github.com/portworx/px-object-controller/client/clientset/versioned"
 	internalinterfaces "github.com/portworx/px-object-controller/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/portworx/px-object-controller/client/listers/pxobjectservice/v1alpha1"
+	v1alpha1 "github.com/portworx/px-object-controller/client/listers/objectservice/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -46,16 +46,16 @@ func NewFilteredPXBucketClaimInformer(client versioned.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PxobjectserviceV1alpha1().PXBucketClaims(namespace).List(context.TODO(), options)
+				return client.ObjectserviceV1alpha1().PXBucketClaims(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PxobjectserviceV1alpha1().PXBucketClaims(namespace).Watch(context.TODO(), options)
+				return client.ObjectserviceV1alpha1().PXBucketClaims(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&pxobjectservicev1alpha1.PXBucketClaim{},
+		&objectservicev1alpha1.PXBucketClaim{},
 		resyncPeriod,
 		indexers,
 	)
@@ -66,7 +66,7 @@ func (f *pXBucketClaimInformer) defaultInformer(client versioned.Interface, resy
 }
 
 func (f *pXBucketClaimInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&pxobjectservicev1alpha1.PXBucketClaim{}, f.defaultInformer)
+	return f.factory.InformerFor(&objectservicev1alpha1.PXBucketClaim{}, f.defaultInformer)
 }
 
 func (f *pXBucketClaimInformer) Lister() v1alpha1.PXBucketClaimLister {

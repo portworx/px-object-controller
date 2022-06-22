@@ -6,10 +6,10 @@ import (
 	"context"
 	time "time"
 
-	pxobjectservicev1alpha1 "github.com/portworx/px-object-controller/client/apis/pxobjectservice/v1alpha1"
+	objectservicev1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	versioned "github.com/portworx/px-object-controller/client/clientset/versioned"
 	internalinterfaces "github.com/portworx/px-object-controller/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/portworx/px-object-controller/client/listers/pxobjectservice/v1alpha1"
+	v1alpha1 "github.com/portworx/px-object-controller/client/listers/objectservice/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -45,16 +45,16 @@ func NewFilteredPXBucketClassInformer(client versioned.Interface, resyncPeriod t
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PxobjectserviceV1alpha1().PXBucketClasses().List(context.TODO(), options)
+				return client.ObjectserviceV1alpha1().PXBucketClasses().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PxobjectserviceV1alpha1().PXBucketClasses().Watch(context.TODO(), options)
+				return client.ObjectserviceV1alpha1().PXBucketClasses().Watch(context.TODO(), options)
 			},
 		},
-		&pxobjectservicev1alpha1.PXBucketClass{},
+		&objectservicev1alpha1.PXBucketClass{},
 		resyncPeriod,
 		indexers,
 	)
@@ -65,7 +65,7 @@ func (f *pXBucketClassInformer) defaultInformer(client versioned.Interface, resy
 }
 
 func (f *pXBucketClassInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&pxobjectservicev1alpha1.PXBucketClass{}, f.defaultInformer)
+	return f.factory.InformerFor(&objectservicev1alpha1.PXBucketClass{}, f.defaultInformer)
 }
 
 func (f *pXBucketClassInformer) Lister() v1alpha1.PXBucketClassLister {

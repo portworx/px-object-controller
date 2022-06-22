@@ -5,7 +5,7 @@ package fake
 import (
 	"context"
 
-	v1alpha1 "github.com/portworx/px-object-controller/client/apis/pxobjectservice/v1alpha1"
+	v1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -16,13 +16,13 @@ import (
 
 // FakePXBucketClaims implements PXBucketClaimInterface
 type FakePXBucketClaims struct {
-	Fake *FakePxobjectserviceV1alpha1
+	Fake *FakeObjectserviceV1alpha1
 	ns   string
 }
 
-var pxbucketclaimsResource = schema.GroupVersionResource{Group: "pxobjectservice.portworx.io", Version: "v1alpha1", Resource: "pxbucketclaims"}
+var pxbucketclaimsResource = schema.GroupVersionResource{Group: "objectservice.portworx.io", Version: "v1alpha1", Resource: "pxbucketclaims"}
 
-var pxbucketclaimsKind = schema.GroupVersionKind{Group: "pxobjectservice.portworx.io", Version: "v1alpha1", Kind: "PXBucketClaim"}
+var pxbucketclaimsKind = schema.GroupVersionKind{Group: "objectservice.portworx.io", Version: "v1alpha1", Kind: "PXBucketClaim"}
 
 // Get takes name of the pXBucketClaim, and returns the corresponding pXBucketClaim object, and an error if there is any.
 func (c *FakePXBucketClaims) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PXBucketClaim, err error) {

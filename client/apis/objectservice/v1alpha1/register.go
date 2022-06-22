@@ -7,7 +7,7 @@ import (
 )
 
 // GroupName is the group name use in this package.
-const GroupName = "pxobjectservice.portworx.io"
+const GroupName = "objectservice.portworx.io"
 
 var (
 	// SchemeBuilder is the new scheme builder

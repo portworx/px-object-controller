@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	v1alpha1 "github.com/portworx/px-object-controller/client/apis/pxobjectservice/v1alpha1"
+	v1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	scheme "github.com/portworx/px-object-controller/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -41,7 +41,7 @@ type pXBucketClaims struct {
 }
 
 // newPXBucketClaims returns a PXBucketClaims
-func newPXBucketClaims(c *PxobjectserviceV1alpha1Client, namespace string) *pXBucketClaims {
+func newPXBucketClaims(c *ObjectserviceV1alpha1Client, namespace string) *pXBucketClaims {
 	return &pXBucketClaims{
 		client: c.RESTClient(),
 		ns:     namespace,

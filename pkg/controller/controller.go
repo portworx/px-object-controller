@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/libopenstorage/openstorage/pkg/correlation"
-	crdv1alpha1 "github.com/portworx/px-object-controller/client/apis/pxobjectservice/v1alpha1"
+	crdv1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	clientset "github.com/portworx/px-object-controller/client/clientset/versioned"
 	"github.com/portworx/px-object-controller/client/clientset/versioned/scheme"
 	bucketscheme "github.com/portworx/px-object-controller/client/clientset/versioned/scheme"
 	informers "github.com/portworx/px-object-controller/client/informers/externalversions"
-	bucketlisters "github.com/portworx/px-object-controller/client/listers/pxobjectservice/v1alpha1"
+	bucketlisters "github.com/portworx/px-object-controller/client/listers/objectservice/v1alpha1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"github.com/portworx/px-object-controller/pkg/client"
@@ -90,7 +90,7 @@ func New(cfg *Config) (*Controller, error) {
 
 	// Create factory and informers
 	factory := informers.NewSharedInformerFactory(k8sBucketClient, cfg.ResyncPeriod)
-	bucketInformer := factory.Pxobjectservice().V1alpha1().PXBucketClaims()
+	bucketInformer := factory.Objectservice().V1alpha1().PXBucketClaims()
 	bucketInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    func(obj interface{}) { ctrl.enqueueBucketWork(obj) },

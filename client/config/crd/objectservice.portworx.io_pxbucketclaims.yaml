@@ -6,39 +6,47 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
-  name: pxbucketclasses.pxobjectservice.portworx.io
+  name: pxbucketclaims.objectservice.portworx.io
 spec:
-  group: pxobjectservice.portworx.io
+  group: objectservice.portworx.io
   names:
-    kind: PXBucketClass
-    listKind: PXBucketClassList
-    plural: pxbucketclasses
+    kind: PXBucketClaim
+    listKind: PXBucketClaimList
+    plural: pxbucketclaims
     shortNames:
-    - pbclass
-    singular: pxbucketclass
-  scope: Cluster
+    - pbc
+    singular: pxbucketclaim
+  scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: PXBucketClass is a user's template for a bucket
+        description: PXBucketClaim is a user's request for a bucket
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          driver:
-            description: Driver defines the driver to use Required.
             type: string
           kind:
             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
-          region:
-            description: Region defines the region to use
-            type: string
+          spec:
+            description: spec defines the desired characteristics of a bucket requested by a user. Required.
+            properties:
+              bucketClassName:
+                description: BucketClassName is the name of the PXBucketClass requested by the PXBucketClaim. Required.
+                type: string
+            type: object
+          status:
+            description: status represents the current information of a bucket.
+            properties:
+              bucketClassName:
+                description: BucketClassName is the name of the PXBucketClass requested by the PXBucketClaim. Required.
+                type: string
+            type: object
         required:
-        - driver
+        - spec
         type: object
     served: true
     storage: true

@@ -11,7 +11,7 @@ import (
 // PXBucketClaim is a user's request for a bucket
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Namespaced,shortName=pbc
-// +groupName=pxobjectservice.portworx.io
+// +groupName=objectservice.portworx.io
 type PXBucketClaim struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
@@ -61,7 +61,7 @@ type BucketClaimStatus struct {
 // PXBucketClass is a user's template for a bucket
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster,shortName=pbclass
-// +groupName=pxobjectservice.portworx.io
+// +groupName=objectservice.portworx.io
 type PXBucketClass struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
