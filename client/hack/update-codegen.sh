@@ -13,9 +13,5 @@ CODE_GENERATOR_PATH=${CODE_GENERATOR_BASE}/code-generator
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 bash "${CODE_GENERATOR_PATH}"/generate-groups.sh "deepcopy,client,lister,informer" \
   github.com/portworx/px-object-controller/client github.com/portworx/px-object-controller/client/apis \
-  pxobjectservice:v1alpha1 \
+  objectservice:v1alpha1 \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
-
-
-# To use your own boilerplate text append:
-#   --go-header-file "${SCRIPT_ROOT}"/hack/custom-boilerplate.go.txt

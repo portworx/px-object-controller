@@ -9,3 +9,7 @@ type PXBucketClaimListerExpansion interface{}
 // PXBucketClaimNamespaceListerExpansion allows custom methods to be added to
 // PXBucketClaimNamespaceLister.
 type PXBucketClaimNamespaceListerExpansion interface{}
+
+// PXBucketClassListerExpansion allows custom methods to be added to
+// PXBucketClassLister.
+type PXBucketClassListerExpansion interface{}

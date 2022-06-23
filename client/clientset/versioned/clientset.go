@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	pxobjectservicev1alpha1 "github.com/portworx/px-object-controller/client/clientset/versioned/typed/pxobjectservice/v1alpha1"
+	objectservicev1alpha1 "github.com/portworx/px-object-controller/client/clientset/versioned/typed/objectservice/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -14,19 +14,19 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	PxobjectserviceV1alpha1() pxobjectservicev1alpha1.PxobjectserviceV1alpha1Interface
+	ObjectserviceV1alpha1() objectservicev1alpha1.ObjectserviceV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	pxobjectserviceV1alpha1 *pxobjectservicev1alpha1.PxobjectserviceV1alpha1Client
+	objectserviceV1alpha1 *objectservicev1alpha1.ObjectserviceV1alpha1Client
 }
 
-// PxobjectserviceV1alpha1 retrieves the PxobjectserviceV1alpha1Client
-func (c *Clientset) PxobjectserviceV1alpha1() pxobjectservicev1alpha1.PxobjectserviceV1alpha1Interface {
-	return c.pxobjectserviceV1alpha1
+// ObjectserviceV1alpha1 retrieves the ObjectserviceV1alpha1Client
+func (c *Clientset) ObjectserviceV1alpha1() objectservicev1alpha1.ObjectserviceV1alpha1Interface {
+	return c.objectserviceV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -73,7 +73,7 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.pxobjectserviceV1alpha1, err = pxobjectservicev1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	cs.objectserviceV1alpha1, err = objectservicev1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.pxobjectserviceV1alpha1 = pxobjectservicev1alpha1.New(c)
+	cs.objectserviceV1alpha1 = objectservicev1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

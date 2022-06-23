@@ -168,8 +168,8 @@ integration-test-suite: kind-setup integration-test kind-teardown
 
 codegen:
 	@echo "Generating code"
-	@client/hack/update-crd.sh
-	@client/hack/update-codegen.sh
+	./client/hack/update-crd.sh
+	./client/hack/update-codegen.sh
 
 px-object-controller:
 	@echo "Building the cluster px-object-controller binary"

@@ -5,7 +5,7 @@ package fake
 import (
 	"context"
 
-	v1alpha1 "github.com/portworx/px-object-controller/client/apis/pxobjectservice/v1alpha1"
+	v1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -16,13 +16,13 @@ import (
 
 // FakePXBucketClaims implements PXBucketClaimInterface
 type FakePXBucketClaims struct {
-	Fake *FakePxobjectserviceV1alpha1
+	Fake *FakeObjectserviceV1alpha1
 	ns   string
 }
 
-var pxbucketclaimsResource = schema.GroupVersionResource{Group: "pxobjectservice.portworx.io", Version: "v1alpha1", Resource: "pxbucketclaims"}
+var pxbucketclaimsResource = schema.GroupVersionResource{Group: "objectservice.portworx.io", Version: "v1alpha1", Resource: "pxbucketclaims"}
 
-var pxbucketclaimsKind = schema.GroupVersionKind{Group: "pxobjectservice.portworx.io", Version: "v1alpha1", Kind: "PXBucketClaim"}
+var pxbucketclaimsKind = schema.GroupVersionKind{Group: "objectservice.portworx.io", Version: "v1alpha1", Kind: "PXBucketClaim"}
 
 // Get takes name of the pXBucketClaim, and returns the corresponding pXBucketClaim object, and an error if there is any.
 func (c *FakePXBucketClaims) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PXBucketClaim, err error) {
@@ -79,6 +79,18 @@ func (c *FakePXBucketClaims) Create(ctx context.Context, pXBucketClaim *v1alpha1
 func (c *FakePXBucketClaims) Update(ctx context.Context, pXBucketClaim *v1alpha1.PXBucketClaim, opts v1.UpdateOptions) (result *v1alpha1.PXBucketClaim, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(pxbucketclaimsResource, c.ns, pXBucketClaim), &v1alpha1.PXBucketClaim{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.PXBucketClaim), err
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakePXBucketClaims) UpdateStatus(ctx context.Context, pXBucketClaim *v1alpha1.PXBucketClaim, opts v1.UpdateOptions) (*v1alpha1.PXBucketClaim, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(pxbucketclaimsResource, "status", c.ns, pXBucketClaim), &v1alpha1.PXBucketClaim{})
 
 	if obj == nil {
 		return nil, err

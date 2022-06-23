@@ -11,7 +11,7 @@ import (
 // PXBucketClaim is a user's request for a bucket
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Namespaced,shortName=pbc
-// +groupName=pxobjectservice.portworx.io
+// +groupName=objectservice.portworx.io
 type PXBucketClaim struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
@@ -52,7 +52,39 @@ type BucketClaimStatus struct {
 	// provisioned indicates if the bucket is created.
 	// +optional
 	Provisioned *bool `json:"provisioned,omitempty" protobuf:"varint,1,opt,name=provisioned"`
+}
 
-	// error is the last observed error during bucket creation, if any.
-	Error *error `json:"error,omitempty" protobuf:"bytes,2,opt,name=error"`
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// PXBucketClass is a user's template for a bucket
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster,shortName=pbclass
+// +groupName=objectservice.portworx.io
+type PXBucketClass struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// Driver defines the driver to use
+	// Required.
+	Driver string `json:"driver" protobuf:"bytes,2,opt,name=driver"`
+
+	// Region defines the region to use
+	// +optional
+	Region string `json:"region" protobuf:"bytes,3,opt,name=region"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// PXBucketClassList is a list of PXBucketClass objects
+type PXBucketClassList struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// List of PXBucketClaims
+	Items []PXBucketClass `json:"items" protobuf:"bytes,2,rep,name=items"`
 }

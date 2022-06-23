@@ -1,28 +1,29 @@
 package controller
 
 import (
+	"context"
+	"errors"
 	"time"
 
 	"github.com/libopenstorage/openstorage/pkg/correlation"
-	crdv1alpha1 "github.com/portworx/px-object-controller/client/apis/pxobjectservice/v1alpha1"
+	crdv1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	clientset "github.com/portworx/px-object-controller/client/clientset/versioned"
 	"github.com/portworx/px-object-controller/client/clientset/versioned/scheme"
 	bucketscheme "github.com/portworx/px-object-controller/client/clientset/versioned/scheme"
 	informers "github.com/portworx/px-object-controller/client/informers/externalversions"
-	bucketlisters "github.com/portworx/px-object-controller/client/listers/pxobjectservice/v1alpha1"
+	bucketlisters "github.com/portworx/px-object-controller/client/listers/objectservice/v1alpha1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"github.com/portworx/px-object-controller/pkg/client"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -89,7 +90,7 @@ func New(cfg *Config) (*Controller, error) {
 
 	// Create factory and informers
 	factory := informers.NewSharedInformerFactory(k8sBucketClient, cfg.ResyncPeriod)
-	bucketInformer := factory.Pxobjectservice().V1alpha1().PXBucketClaims()
+	bucketInformer := factory.Objectservice().V1alpha1().PXBucketClaims()
 	bucketInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    func(obj interface{}) { ctrl.enqueueBucketWork(obj) },
@@ -107,7 +108,7 @@ func New(cfg *Config) (*Controller, error) {
 	ctrl.bucketListerSynced = bucketInformer.Informer().HasSynced
 	ctrl.bucketQueue = workqueue.NewNamedRateLimitingQueue(bucketRateLimiter, "px-object-controller-bucket")
 	broadcaster := record.NewBroadcaster()
-	broadcaster.StartLogging(klog.Infof)
+	broadcaster.StartLogging(logrus.Infof)
 	broadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: k8sClient.CoreV1().Events(v1.NamespaceAll)})
 	ctrl.eventRecorder = broadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "px-object-controller"})
 	bucketscheme.AddToScheme(scheme.Scheme)
@@ -133,12 +134,13 @@ func (ctrl *Controller) bucketWorker() {
 		return
 	}
 	defer ctrl.bucketQueue.Done(keyObj)
+	ctx := correlation.WithCorrelationContext(context.Background(), "px-object-controller/pkg/controller")
 
-	if err := ctrl.processBucket(keyObj.(string)); err != nil {
+	if err := ctrl.processBucket(ctx, keyObj.(string)); err != nil {
 		// Rather than wait for a full resync, re-add the key to the
 		// queue to be processed.
 		ctrl.bucketQueue.AddRateLimited(keyObj)
-		klog.V(4).Infof("Failed to sync bucket %q, will retry again: %v", keyObj.(string), err)
+		logrus.Infof("Failed to sync bucket %q, will retry again: %v", keyObj.(string), err)
 	} else {
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
@@ -146,44 +148,54 @@ func (ctrl *Controller) bucketWorker() {
 	}
 }
 
-func (ctrl *Controller) processBucket(key string) error {
-	klog.V(5).Infof("syncBucketClaimByKey[%s]", key)
+func (ctrl *Controller) processBucket(ctx context.Context, key string) error {
+	logrus.Infof("syncBucketClaimByKey[%s]", key)
 
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	klog.V(5).Infof("processBucket: bucket namespace [%s] name [%s]", namespace, name)
+	logrus.Infof("processBucket: bucket namespace [%s] name [%s]", namespace, name)
 	if err != nil {
-		klog.Errorf("error getting namespace & name of bucketclaim %q to get bucketclaim from informer: %v", key, err)
+		logrus.Errorf("error getting namespace & name of bucketclaim %q to get bucketclaim from informer: %v", key, err)
 		return nil
 	}
 	bucketClaim, err := ctrl.bucketLister.PXBucketClaims(namespace).Get(name)
 	if err == nil {
-		klog.V(5).Infof("Creating bucketclaim %q", key)
-		return ctrl.createBucket(bucketClaim)
+		var bucketClass *crdv1alpha1.PXBucketClass
+		if bucketClaim.Spec.BucketClassName != nil {
+			bucketClass, err = ctrl.k8sBucketClient.ObjectserviceV1alpha1().PXBucketClasses().Get(ctx, *bucketClaim.Spec.BucketClassName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+		} else {
+			return errors.New("PXBucketClaim must reference a PXBucketClass")
+		}
+
+		logrus.Infof("Creating bucketclaim %q", key)
+		return ctrl.createBucket(ctx, bucketClaim, bucketClass)
 	}
-	if err != nil && !errors.IsNotFound(err) {
-		klog.V(2).Infof("error getting bucketclaim %q from informer: %v", key, err)
+	if err != nil && !k8s_errors.IsNotFound(err) {
+		logrus.Infof("error getting bucketclaim %q from informer: %v", key, err)
 		return err
 	}
 	// The bucketclaim is not in informer cache, the event must have been "delete"
-	vsObj, found, err := ctrl.bucketStore.GetByKey(key)
+	bcObj, found, err := ctrl.bucketStore.GetByKey(key)
 	if err != nil {
-		klog.V(2).Infof("error getting bucketclaim %q from cache: %v", key, err)
+		logrus.Infof("error getting bucketclaim %q from cache: %v", key, err)
 		return nil
 	}
 	if !found {
 		// The controller has already processed the delete event and
 		// deleted the bucketclaim from its cache
-		klog.V(2).Infof("deletion of bucketclaim %q was already processed", key)
+		logrus.Infof("deletion of bucketclaim %q was already processed", key)
 		return nil
 	}
-	bucketclaim, ok := vsObj.(*crdv1alpha1.PXBucketClaim)
+	bucketclaim, ok := bcObj.(*crdv1alpha1.PXBucketClaim)
 	if !ok {
-		klog.Errorf("expected vs, got %+v", vsObj)
+		logrus.Errorf("expected bc, got %+v", bcObj)
 		return nil
 	}
 
-	klog.V(5).Infof("deleting bucketclaim %q", key)
-	ctrl.deleteBucket(bucketclaim)
+	logrus.Infof("deleting bucketclaim %q", key)
+	ctrl.deleteBucket(ctx, bucketclaim)
 
 	return nil
 }
@@ -197,10 +209,10 @@ func (ctrl *Controller) enqueueBucketWork(obj interface{}) {
 	if bucket, ok := obj.(*crdv1alpha1.PXBucketClaim); ok {
 		objName, err := cache.DeletionHandlingMetaNamespaceKeyFunc(bucket)
 		if err != nil {
-			klog.Errorf("failed to get key from object: %v, %v", err, bucket)
+			logrus.Errorf("failed to get key from object: %v, %v", err, bucket)
 			return
 		}
-		klog.V(5).Infof("enqueued %q for sync", objName)
+		logrus.Infof("enqueued %q for sync", objName)
 		ctrl.bucketQueue.Add(objName)
 	}
 }

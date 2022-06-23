@@ -9,7 +9,7 @@ import (
 
 	versioned "github.com/portworx/px-object-controller/client/clientset/versioned"
 	internalinterfaces "github.com/portworx/px-object-controller/client/informers/externalversions/internalinterfaces"
-	pxobjectservice "github.com/portworx/px-object-controller/client/informers/externalversions/pxobjectservice"
+	objectservice "github.com/portworx/px-object-controller/client/informers/externalversions/objectservice"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -156,9 +156,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Pxobjectservice() pxobjectservice.Interface
+	Objectservice() objectservice.Interface
 }
 
-func (f *sharedInformerFactory) Pxobjectservice() pxobjectservice.Interface {
-	return pxobjectservice.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Objectservice() objectservice.Interface {
+	return objectservice.New(f, f.namespace, f.tweakListOptions)
 }
