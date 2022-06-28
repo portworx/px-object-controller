@@ -45,13 +45,13 @@ func NewFilteredPXBucketClassInformer(client versioned.Interface, resyncPeriod t
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ObjectserviceV1alpha1().PXBucketClasses().List(context.TODO(), options)
+				return client.ObjectV1alpha1().PXBucketClasses().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ObjectserviceV1alpha1().PXBucketClasses().Watch(context.TODO(), options)
+				return client.ObjectV1alpha1().PXBucketClasses().Watch(context.TODO(), options)
 			},
 		},
 		&objectservicev1alpha1.PXBucketClass{},

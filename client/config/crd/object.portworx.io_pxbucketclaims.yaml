@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
-  name: pxbucketclaims.objectservice.portworx.io
+  name: pxbucketclaims.object.portworx.io
 spec:
-  group: objectservice.portworx.io
+  group: object.portworx.io
   names:
     kind: PXBucketClaim
     listKind: PXBucketClaimList
@@ -18,7 +18,16 @@ spec:
     singular: pxbucketclaim
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: Indicates whether the bucket has been provisioned for this claim
+      jsonPath: .status.provisioned
+      name: Provisioned
+      type: string
+    - description: Indicates the bucket ID for this provisioned bucketclaim
+      jsonPath: .status.bucketId
+      name: BucketID
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: PXBucketClaim is a user's request for a bucket
@@ -41,8 +50,20 @@ spec:
           status:
             description: status represents the current information of a bucket.
             properties:
-              bucketClassName:
-                description: BucketClassName is the name of the PXBucketClass requested by the PXBucketClaim. Required.
+              bucketId:
+                description: bucketId indicates the bucket ID
+                type: string
+              deletionPolicy:
+                description: DeletionPolicy is the deletion policy that the PXBucketClaim was created with
+                enum:
+                - Delete
+                - Retain
+                type: string
+              provisioned:
+                description: provisioned indicates if the bucket is created.
+                type: boolean
+              region:
+                description: region indicates the region where the bucket is created.
                 type: string
             type: object
         required:
@@ -50,6 +71,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

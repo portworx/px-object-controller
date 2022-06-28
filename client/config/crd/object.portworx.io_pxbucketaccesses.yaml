@@ -1,0 +1,87 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: pxbucketaccesses.object.portworx.io
+spec:
+  group: object.portworx.io
+  names:
+    kind: PXBucketAccess
+    listKind: PXBucketAccessList
+    plural: pxbucketaccesses
+    shortNames:
+    - pba
+    singular: pxbucketaccess
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Indicates if access has been granted for a given bucket
+      jsonPath: .status.accessGranted
+      name: AccessGranted
+      type: boolean
+    - description: The secret with connection info for the bucket
+      jsonPath: .status.credentialsSecretName
+      name: CredentialsSecretName
+      type: string
+    - description: The bucket ID for this access object
+      jsonPath: .status.bucketId
+      name: BucketID
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: PXBucketAccess is a user's request to access a bucket
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: spec defines the desired characteristics of a bucket requested by a user. Required.
+            properties:
+              bucketClaimName:
+                description: BucketClaimName is the name of the BucketClaim to provide access to.
+                type: string
+              bucketClassName:
+                description: BucketClassName is the name of the PXBucketClass requested by the PXBucketAccess. Required.
+                type: string
+              existingBucketId:
+                description: ExistingBucketId is the bucket ID to provide access to.
+                type: string
+            type: object
+          status:
+            description: spec defines the desiredPXBucketAccess
+            properties:
+              accessGranted:
+                description: accessGranted indicates if the bucket access is created.
+                type: boolean
+              accountId:
+                description: accountId is a reference to the account ID for this access
+                type: string
+              bucketId:
+                description: bucketId is a reference to the bucket ID for this access
+                type: string
+              credentialsSecretName:
+                description: credentialsSecretName is a reference to the secret name with bucketaccess
+                type: string
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

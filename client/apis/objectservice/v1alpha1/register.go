@@ -7,7 +7,7 @@ import (
 )
 
 // GroupName is the group name use in this package.
-const GroupName = "objectservice.portworx.io"
+const GroupName = "object.portworx.io"
 
 var (
 	// SchemeBuilder is the new scheme builder
@@ -34,6 +34,7 @@ func init() {
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&PXBucketClaim{},
+		&PXBucketAccess{},
 		&PXBucketClass{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

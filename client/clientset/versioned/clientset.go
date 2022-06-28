@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	objectservicev1alpha1 "github.com/portworx/px-object-controller/client/clientset/versioned/typed/objectservice/v1alpha1"
+	objectv1alpha1 "github.com/portworx/px-object-controller/client/clientset/versioned/typed/objectservice/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -14,19 +14,19 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	ObjectserviceV1alpha1() objectservicev1alpha1.ObjectserviceV1alpha1Interface
+	ObjectV1alpha1() objectv1alpha1.ObjectV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	objectserviceV1alpha1 *objectservicev1alpha1.ObjectserviceV1alpha1Client
+	objectV1alpha1 *objectv1alpha1.ObjectV1alpha1Client
 }
 
-// ObjectserviceV1alpha1 retrieves the ObjectserviceV1alpha1Client
-func (c *Clientset) ObjectserviceV1alpha1() objectservicev1alpha1.ObjectserviceV1alpha1Interface {
-	return c.objectserviceV1alpha1
+// ObjectV1alpha1 retrieves the ObjectV1alpha1Client
+func (c *Clientset) ObjectV1alpha1() objectv1alpha1.ObjectV1alpha1Interface {
+	return c.objectV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -73,7 +73,7 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.objectserviceV1alpha1, err = objectservicev1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	cs.objectV1alpha1, err = objectv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.objectserviceV1alpha1 = objectservicev1alpha1.New(c)
+	cs.objectV1alpha1 = objectv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

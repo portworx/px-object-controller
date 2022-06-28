@@ -16,12 +16,12 @@ import (
 
 // FakePXBucketClasses implements PXBucketClassInterface
 type FakePXBucketClasses struct {
-	Fake *FakeObjectserviceV1alpha1
+	Fake *FakeObjectV1alpha1
 }
 
-var pxbucketclassesResource = schema.GroupVersionResource{Group: "objectservice.portworx.io", Version: "v1alpha1", Resource: "pxbucketclasses"}
+var pxbucketclassesResource = schema.GroupVersionResource{Group: "object.portworx.io", Version: "v1alpha1", Resource: "pxbucketclasses"}
 
-var pxbucketclassesKind = schema.GroupVersionKind{Group: "objectservice.portworx.io", Version: "v1alpha1", Kind: "PXBucketClass"}
+var pxbucketclassesKind = schema.GroupVersionKind{Group: "object.portworx.io", Version: "v1alpha1", Kind: "PXBucketClass"}
 
 // Get takes name of the pXBucketClass, and returns the corresponding pXBucketClass object, and an error if there is any.
 func (c *FakePXBucketClasses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PXBucketClass, err error) {

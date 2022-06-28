@@ -8,21 +8,25 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeObjectserviceV1alpha1 struct {
+type FakeObjectV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeObjectserviceV1alpha1) PXBucketClaims(namespace string) v1alpha1.PXBucketClaimInterface {
+func (c *FakeObjectV1alpha1) PXBucketAccesses(namespace string) v1alpha1.PXBucketAccessInterface {
+	return &FakePXBucketAccesses{c, namespace}
+}
+
+func (c *FakeObjectV1alpha1) PXBucketClaims(namespace string) v1alpha1.PXBucketClaimInterface {
 	return &FakePXBucketClaims{c, namespace}
 }
 
-func (c *FakeObjectserviceV1alpha1) PXBucketClasses() v1alpha1.PXBucketClassInterface {
+func (c *FakeObjectV1alpha1) PXBucketClasses() v1alpha1.PXBucketClassInterface {
 	return &FakePXBucketClasses{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeObjectserviceV1alpha1) RESTClient() rest.Interface {
+func (c *FakeObjectV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

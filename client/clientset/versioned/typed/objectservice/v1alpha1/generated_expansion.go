@@ -2,6 +2,8 @@
 
 package v1alpha1
 
+type PXBucketAccessExpansion interface{}
+
 type PXBucketClaimExpansion interface{}
 
 type PXBucketClassExpansion interface{}

@@ -11,11 +11,12 @@ require (
 	github.com/go-logr/logr v1.2.2 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/uuid v1.3.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/kubernetes-csi/csi-lib-utils v0.11.0
-	github.com/libopenstorage/openstorage v8.0.1-0.20190926212733-daaed777713e+incompatible
+	github.com/libopenstorage/openstorage v9.4.20+incompatible
 	github.com/onsi/gomega v1.17.0 // indirect
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799 // indirect
 	github.com/opencontainers/runc v1.1.3 // indirect
@@ -26,7 +27,7 @@ require (
 	github.com/zoido/yag-config v0.4.0
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
-	google.golang.org/grpc v1.43.0 // indirect
+	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
@@ -38,7 +39,7 @@ require (
 
 replace (
 	github.com/kubernetes-incubator/external-storage => github.com/libopenstorage/external-storage v5.1.1-0.20190919185747-9394ee8dd536+incompatible
-	github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220608215924-d8e6f0feea09
+	github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220628004541-5a7fab82f7b1
 
 	// Replacing k8s.io dependencies is required if a dependency or any dependency of a dependency
 	// depends on k8s.io/kubernetes. See https://github.com/kubernetes/kubernetes/issues/79384#issuecomment-505725449

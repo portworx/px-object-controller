@@ -46,13 +46,13 @@ func NewFilteredPXBucketClaimInformer(client versioned.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ObjectserviceV1alpha1().PXBucketClaims(namespace).List(context.TODO(), options)
+				return client.ObjectV1alpha1().PXBucketClaims(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ObjectserviceV1alpha1().PXBucketClaims(namespace).Watch(context.TODO(), options)
+				return client.ObjectV1alpha1().PXBucketClaims(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&objectservicev1alpha1.PXBucketClaim{},

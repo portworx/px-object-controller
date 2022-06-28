@@ -39,7 +39,7 @@ type pXBucketClasses struct {
 }
 
 // newPXBucketClasses returns a PXBucketClasses
-func newPXBucketClasses(c *ObjectserviceV1alpha1Client) *pXBucketClasses {
+func newPXBucketClasses(c *ObjectV1alpha1Client) *pXBucketClasses {
 	return &pXBucketClasses{
 		client: c.RESTClient(),
 	}

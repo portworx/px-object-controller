@@ -16,7 +16,7 @@ var (
 )
 
 func init() {
-	logrus = correlation.NewPackageLogger(correlation.ComponentCSIDriver)
+	logrus = correlation.NewPackageLogger("pkg/client")
 }
 
 func (c *Client) CreateBucket(ctx context.Context, req *api.BucketCreateRequest) (*api.BucketCreateResponse, error) {
