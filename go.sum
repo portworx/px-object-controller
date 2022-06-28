@@ -458,8 +458,8 @@ github.com/libopenstorage/external-storage v5.1.1-0.20190919185747-9394ee8dd536+
 github.com/libopenstorage/gossip v0.0.0-20190507031959-c26073a01952/go.mod h1:TjXt2Iz2bTkpfc4Q6xN0ttiNipTVwEEYoZSMZHlfPek=
 github.com/libopenstorage/gossip v0.0.0-20220309192431-44c895e0923e h1:4l9N2Sw8VGGUqe50yC2BnTFMRJuHJGpIGZcCUZ2S6gg=
 github.com/libopenstorage/gossip v0.0.0-20220309192431-44c895e0923e/go.mod h1:TjXt2Iz2bTkpfc4Q6xN0ttiNipTVwEEYoZSMZHlfPek=
-github.com/libopenstorage/openstorage v1.0.1-0.20220608215924-d8e6f0feea09 h1:NAhrqdt8RJWE1/QwJNhvqnW9MfgRPmj7NojMX+H3fas=
-github.com/libopenstorage/openstorage v1.0.1-0.20220608215924-d8e6f0feea09/go.mod h1:/FzPtmmVov3VTIIbfglyl9iRN5/rFPfwjP5wf9Sc0aU=
+github.com/libopenstorage/openstorage v1.0.1-0.20220628004541-5a7fab82f7b1 h1:nGLWTjeV6SUWLNZ7NbEgtgyEyjhYnYEm5md5K0AoNDg=
+github.com/libopenstorage/openstorage v1.0.1-0.20220628004541-5a7fab82f7b1/go.mod h1:/FzPtmmVov3VTIIbfglyl9iRN5/rFPfwjP5wf9Sc0aU=
 github.com/libopenstorage/operator v0.0.0-20200725001727-48d03e197117/go.mod h1:Qh+VXOB6hj60VmlgsmY+R1w+dFuHK246UueM4SAqZG0=
 github.com/libopenstorage/secrets v0.0.0-20200207034622-cdb443738c67/go.mod h1:4QOUUeRMHtTniKPj+biL3wlusahU/7OnMsGKc4FN/EY=
 github.com/libopenstorage/stork v1.3.0-beta1.0.20200630005842-9255e7a98775/go.mod h1:qBSzYTJVHlOMg5RINNiHD1kBzlasnrc2uKLPZLgu1Qs=

@@ -4,8 +4,8 @@ package fake
 
 import (
 	clientset "github.com/portworx/px-object-controller/client/clientset/versioned"
-	objectservicev1alpha1 "github.com/portworx/px-object-controller/client/clientset/versioned/typed/objectservice/v1alpha1"
-	fakeobjectservicev1alpha1 "github.com/portworx/px-object-controller/client/clientset/versioned/typed/objectservice/v1alpha1/fake"
+	objectv1alpha1 "github.com/portworx/px-object-controller/client/clientset/versioned/typed/objectservice/v1alpha1"
+	fakeobjectv1alpha1 "github.com/portworx/px-object-controller/client/clientset/versioned/typed/objectservice/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -63,7 +63,7 @@ var (
 	_ testing.FakeClient  = &Clientset{}
 )
 
-// ObjectserviceV1alpha1 retrieves the ObjectserviceV1alpha1Client
-func (c *Clientset) ObjectserviceV1alpha1() objectservicev1alpha1.ObjectserviceV1alpha1Interface {
-	return &fakeobjectservicev1alpha1.FakeObjectserviceV1alpha1{Fake: &c.Fake}
+// ObjectV1alpha1 retrieves the ObjectV1alpha1Client
+func (c *Clientset) ObjectV1alpha1() objectv1alpha1.ObjectV1alpha1Interface {
+	return &fakeobjectv1alpha1.FakeObjectV1alpha1{Fake: &c.Fake}
 }

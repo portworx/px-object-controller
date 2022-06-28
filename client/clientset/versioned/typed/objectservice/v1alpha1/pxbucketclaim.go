@@ -41,7 +41,7 @@ type pXBucketClaims struct {
 }
 
 // newPXBucketClaims returns a PXBucketClaims
-func newPXBucketClaims(c *ObjectserviceV1alpha1Client, namespace string) *pXBucketClaims {
+func newPXBucketClaims(c *ObjectV1alpha1Client, namespace string) *pXBucketClaims {
 	return &pXBucketClaims{
 		client: c.RESTClient(),
 		ns:     namespace,

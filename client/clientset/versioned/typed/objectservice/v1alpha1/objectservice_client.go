@@ -10,29 +10,34 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-type ObjectserviceV1alpha1Interface interface {
+type ObjectV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	PXBucketAccessesGetter
 	PXBucketClaimsGetter
 	PXBucketClassesGetter
 }
 
-// ObjectserviceV1alpha1Client is used to interact with features provided by the objectservice.portworx.io group.
-type ObjectserviceV1alpha1Client struct {
+// ObjectV1alpha1Client is used to interact with features provided by the object.portworx.io group.
+type ObjectV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *ObjectserviceV1alpha1Client) PXBucketClaims(namespace string) PXBucketClaimInterface {
+func (c *ObjectV1alpha1Client) PXBucketAccesses(namespace string) PXBucketAccessInterface {
+	return newPXBucketAccesses(c, namespace)
+}
+
+func (c *ObjectV1alpha1Client) PXBucketClaims(namespace string) PXBucketClaimInterface {
 	return newPXBucketClaims(c, namespace)
 }
 
-func (c *ObjectserviceV1alpha1Client) PXBucketClasses() PXBucketClassInterface {
+func (c *ObjectV1alpha1Client) PXBucketClasses() PXBucketClassInterface {
 	return newPXBucketClasses(c)
 }
 
-// NewForConfig creates a new ObjectserviceV1alpha1Client for the given config.
+// NewForConfig creates a new ObjectV1alpha1Client for the given config.
 // NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),
 // where httpClient was generated with rest.HTTPClientFor(c).
-func NewForConfig(c *rest.Config) (*ObjectserviceV1alpha1Client, error) {
+func NewForConfig(c *rest.Config) (*ObjectV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -44,9 +49,9 @@ func NewForConfig(c *rest.Config) (*ObjectserviceV1alpha1Client, error) {
 	return NewForConfigAndClient(&config, httpClient)
 }
 
-// NewForConfigAndClient creates a new ObjectserviceV1alpha1Client for the given config and http client.
+// NewForConfigAndClient creates a new ObjectV1alpha1Client for the given config and http client.
 // Note the http client provided takes precedence over the configured transport values.
-func NewForConfigAndClient(c *rest.Config, h *http.Client) (*ObjectserviceV1alpha1Client, error) {
+func NewForConfigAndClient(c *rest.Config, h *http.Client) (*ObjectV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -55,12 +60,12 @@ func NewForConfigAndClient(c *rest.Config, h *http.Client) (*ObjectserviceV1alph
 	if err != nil {
 		return nil, err
 	}
-	return &ObjectserviceV1alpha1Client{client}, nil
+	return &ObjectV1alpha1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new ObjectserviceV1alpha1Client for the given config and
+// NewForConfigOrDie creates a new ObjectV1alpha1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *ObjectserviceV1alpha1Client {
+func NewForConfigOrDie(c *rest.Config) *ObjectV1alpha1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -68,9 +73,9 @@ func NewForConfigOrDie(c *rest.Config) *ObjectserviceV1alpha1Client {
 	return client
 }
 
-// New creates a new ObjectserviceV1alpha1Client for the given RESTClient.
-func New(c rest.Interface) *ObjectserviceV1alpha1Client {
-	return &ObjectserviceV1alpha1Client{c}
+// New creates a new ObjectV1alpha1Client for the given RESTClient.
+func New(c rest.Interface) *ObjectV1alpha1Client {
+	return &ObjectV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -88,7 +93,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *ObjectserviceV1alpha1Client) RESTClient() rest.Interface {
+func (c *ObjectV1alpha1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

@@ -2,6 +2,14 @@
 
 package v1alpha1
 
+// PXBucketAccessListerExpansion allows custom methods to be added to
+// PXBucketAccessLister.
+type PXBucketAccessListerExpansion interface{}
+
+// PXBucketAccessNamespaceListerExpansion allows custom methods to be added to
+// PXBucketAccessNamespaceLister.
+type PXBucketAccessNamespaceListerExpansion interface{}
+
 // PXBucketClaimListerExpansion allows custom methods to be added to
 // PXBucketClaimLister.
 type PXBucketClaimListerExpansion interface{}

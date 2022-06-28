@@ -13,12 +13,12 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list"]
+    verbs: ["get", "list", "create", "delete"]
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["list", "watch", "create", "update", "patch"]
-  - apiGroups: ["objectservice.portworx.io"]
-    resources: ["pxbucketclaims", "pxbucketclasses"]
+  - apiGroups: ["object.portworx.io"]
+    resources: ["pxbucketclaims", "pxbucketaccesses", "pxbucketclasses"]
     verbs: ["list", "watch", "create", "update", "patch", "get"] 
 ---
 kind: ClusterRoleBinding

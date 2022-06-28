@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
-  name: pxbucketclasses.objectservice.portworx.io
+  name: pxbucketclasses.object.portworx.io
 spec:
-  group: objectservice.portworx.io
+  group: object.portworx.io
   names:
     kind: PXBucketClass
     listKind: PXBucketClassList
@@ -18,7 +18,12 @@ spec:
     singular: pxbucketclass
   scope: Cluster
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: The deletion policy for this bucket class
+      jsonPath: .deletionPolicy
+      name: DeletionPolicy
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: PXBucketClass is a user's template for a bucket
@@ -26,22 +31,31 @@ spec:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
-          driver:
-            description: Driver defines the driver to use Required.
+          deletionPolicy:
+            description: deletionPolicy determines whether the underlying bucket should be deleted when a PXBucketClaim is deleted. "Retain" means that the underyling storage bucket is kept. "Delete" means that the underlying storage bucket is deleted. Required.
+            enum:
+            - Delete
+            - Retain
             type: string
           kind:
             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
+          parameters:
+            additionalProperties:
+              type: string
+            description: parameters is a key-value map with storage driver specific parameters for creating snapshots. These values are opaque to Kubernetes.
+            type: object
           region:
             description: Region defines the region to use
             type: string
         required:
-        - driver
+        - deletionPolicy
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

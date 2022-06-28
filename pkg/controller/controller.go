@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/libopenstorage/openstorage/pkg/correlation"
@@ -56,6 +57,12 @@ type Controller struct {
 	bucketListerSynced cache.InformerSynced
 	bucketStore        cache.Store
 	bucketFactory      informers.SharedInformerFactory
+
+	accessQueue        workqueue.RateLimitingInterface
+	accessLister       bucketlisters.PXBucketAccessLister
+	accessListerSynced cache.InformerSynced
+	accessStore        cache.Store
+	accessFactory      informers.SharedInformerFactory
 }
 
 // New returns a new controller server
@@ -90,12 +97,21 @@ func New(cfg *Config) (*Controller, error) {
 
 	// Create factory and informers
 	factory := informers.NewSharedInformerFactory(k8sBucketClient, cfg.ResyncPeriod)
-	bucketInformer := factory.Objectservice().V1alpha1().PXBucketClaims()
+	bucketInformer := factory.Object().V1alpha1().PXBucketClaims()
 	bucketInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    func(obj interface{}) { ctrl.enqueueBucketWork(obj) },
 			UpdateFunc: func(oldObj, newObj interface{}) { ctrl.enqueueBucketWork(newObj) },
 			DeleteFunc: func(obj interface{}) { ctrl.enqueueBucketWork(obj) },
+		},
+		ctrl.config.ResyncPeriod,
+	)
+	accessInformer := factory.Object().V1alpha1().PXBucketAccesses()
+	accessInformer.Informer().AddEventHandlerWithResyncPeriod(
+		cache.ResourceEventHandlerFuncs{
+			AddFunc:    func(obj interface{}) { ctrl.enqueueAccessWork(obj) },
+			UpdateFunc: func(oldObj, newObj interface{}) { ctrl.enqueueAccessWork(newObj) },
+			DeleteFunc: func(obj interface{}) { ctrl.enqueueAccessWork(obj) },
 		},
 		ctrl.config.ResyncPeriod,
 	)
@@ -107,6 +123,15 @@ func New(cfg *Config) (*Controller, error) {
 	ctrl.bucketLister = bucketInformer.Lister()
 	ctrl.bucketListerSynced = bucketInformer.Informer().HasSynced
 	ctrl.bucketQueue = workqueue.NewNamedRateLimitingQueue(bucketRateLimiter, "px-object-controller-bucket")
+
+	// Assign access CR listers and informers
+	accessRateLimiter := workqueue.NewItemExponentialFailureRateLimiter(ctrl.config.RetryIntervalStart, ctrl.config.RetryIntervalMax)
+	ctrl.accessStore = cache.NewStore(cache.DeletionHandlingMetaNamespaceKeyFunc)
+	ctrl.accessLister = accessInformer.Lister()
+	ctrl.accessListerSynced = accessInformer.Informer().HasSynced
+	ctrl.accessQueue = workqueue.NewNamedRateLimitingQueue(accessRateLimiter, "px-object-controller-access")
+
+	// Broadcaster setup
 	broadcaster := record.NewBroadcaster()
 	broadcaster.StartLogging(logrus.Infof)
 	broadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: k8sClient.CoreV1().Events(v1.NamespaceAll)})
@@ -122,6 +147,7 @@ func (ctrl *Controller) Run(workers int, stopCh chan struct{}) {
 
 	for i := 0; i < workers; i++ {
 		go wait.Until(ctrl.bucketWorker, 0, stopCh)
+		go wait.Until(ctrl.accessWorker, 0, stopCh)
 	}
 
 	<-stopCh
@@ -161,12 +187,18 @@ func (ctrl *Controller) processBucket(ctx context.Context, key string) error {
 	if err == nil {
 		var bucketClass *crdv1alpha1.PXBucketClass
 		if bucketClaim.Spec.BucketClassName != nil {
-			bucketClass, err = ctrl.k8sBucketClient.ObjectserviceV1alpha1().PXBucketClasses().Get(ctx, *bucketClaim.Spec.BucketClassName, metav1.GetOptions{})
+			bucketClass, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClasses().Get(ctx, *bucketClaim.Spec.BucketClassName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 		} else {
 			return errors.New("PXBucketClaim must reference a PXBucketClass")
+		}
+
+		if bucketClaim.Status != nil && bucketClaim.Status.Provisioned {
+			logrus.Infof("bucketclaim %q already provisioned", key)
+			_, err := ctrl.storeBucketUpdate(bucketClaim)
+			return err
 		}
 
 		logrus.Infof("Creating bucketclaim %q", key)
@@ -214,5 +246,116 @@ func (ctrl *Controller) enqueueBucketWork(obj interface{}) {
 		}
 		logrus.Infof("enqueued %q for sync", objName)
 		ctrl.bucketQueue.Add(objName)
+	}
+}
+
+// bucketWorker is the main worker for PXBucketClaims.
+func (ctrl *Controller) accessWorker() {
+	keyObj, quit := ctrl.accessQueue.Get()
+	if quit {
+		return
+	}
+	defer ctrl.accessQueue.Done(keyObj)
+	ctx := correlation.WithCorrelationContext(context.Background(), "px-object-controller/pkg/controller")
+
+	if err := ctrl.processAccess(ctx, keyObj.(string)); err != nil {
+		// Rather than wait for a full resync, re-add the key to the
+		// queue to be processed.
+		ctrl.accessQueue.AddRateLimited(keyObj)
+		logrus.Infof("Failed to sync bucket access %q, will retry again: %v", keyObj.(string), err)
+	} else {
+		// Finally, if no error occurs we Forget this item so it does not
+		// get queued again until another change happens.
+		ctrl.accessQueue.Forget(keyObj)
+	}
+}
+
+func (ctrl *Controller) processAccess(ctx context.Context, key string) error {
+	logrus.Infof("syncBucketAccessByKey[%s]", key)
+
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	logrus.Infof("processBucket: bucket access namespace [%s] name [%s]", namespace, name)
+	if err != nil {
+		logrus.Errorf("error getting namespace & name of bucketaccess %q to get bucketaccess from informer: %v", key, err)
+		return nil
+	}
+	bucketAccess, err := ctrl.accessLister.PXBucketAccesses(namespace).Get(name)
+	if err == nil {
+		var bucketClass *crdv1alpha1.PXBucketClass
+		if bucketAccess.Spec.BucketClassName != "" {
+			bucketClass, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClasses().Get(ctx, bucketAccess.Spec.BucketClassName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+		} else {
+			return errors.New("PXBucketAccess must reference a PXBucketClass")
+		}
+		if bucketAccess.Status != nil && bucketAccess.Status.AccessGranted {
+			logrus.Infof("access already granted to bucket %s for bucket access %s", bucketAccess.Status.BucketId, key)
+			_, err = ctrl.storeAccessUpdate(bucketAccess)
+			return nil
+		}
+
+		var bucketID string
+		if bucketAccess.Spec.BucketClaimName != "" {
+			pbc, err := ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClaims(bucketAccess.Namespace).Get(ctx, bucketAccess.Spec.BucketClaimName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if pbc.Status == nil {
+				return fmt.Errorf("bucket claim %s exists but is not yet provisioned", bucketAccess.Spec.BucketClaimName)
+			}
+
+			bucketID = string(pbc.GetUID())
+		}
+		if bucketAccess.Spec.ExistingBucketId != "" {
+			bucketID = bucketAccess.Spec.ExistingBucketId
+		}
+
+		logrus.Infof("Creating bucketaccess %q for bucket ID %v", key, bucketID)
+		return ctrl.createAccess(ctx, bucketAccess, bucketClass, bucketID)
+	}
+	if err != nil && !k8s_errors.IsNotFound(err) {
+		logrus.Infof("error getting bucketaccess %q from informer: %v", key, err)
+		return err
+	}
+	// The bucketaccess is not in informer cache, the event must have been "delete"
+	bacObj, found, err := ctrl.accessStore.GetByKey(key)
+	if err != nil {
+		logrus.Infof("error getting bucketaccess %q from cache: %v", key, err)
+		return nil
+	}
+	if !found {
+		// The controller has already processed the delete event and
+		// deleted the bucketaccess from its cache
+		logrus.Infof("deletion of bucketaccess %q was already processed", key)
+		return nil
+	}
+	bucketaccess, ok := bacObj.(*crdv1alpha1.PXBucketAccess)
+	if !ok {
+		logrus.Errorf("expected bc, got %+v", bacObj)
+		return nil
+	}
+
+	logrus.Infof("deleting bucketaccess %q", key)
+	ctrl.revokeAccess(ctx, bucketaccess)
+
+	return nil
+}
+
+// enqueueBucketClaimWork adds bucketclaim to given work queue.
+func (ctrl *Controller) enqueueAccessWork(obj interface{}) {
+	// Beware of "xxx deleted" events
+	if unknown, ok := obj.(cache.DeletedFinalStateUnknown); ok && unknown.Obj != nil {
+		obj = unknown.Obj
+	}
+	if access, ok := obj.(*crdv1alpha1.PXBucketAccess); ok {
+		objName, err := cache.DeletionHandlingMetaNamespaceKeyFunc(access)
+		if err != nil {
+			logrus.Errorf("failed to get key from object: %v, %v", err, access)
+			return
+		}
+		logrus.Infof("enqueued %q for sync", objName)
+		ctrl.accessQueue.Add(objName)
 	}
 }

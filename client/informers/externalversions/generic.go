@@ -36,11 +36,13 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=objectservice.portworx.io, Version=v1alpha1
+	// Group=object.portworx.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("pxbucketaccesses"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Object().V1alpha1().PXBucketAccesses().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("pxbucketclaims"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectservice().V1alpha1().PXBucketClaims().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Object().V1alpha1().PXBucketClaims().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("pxbucketclasses"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectservice().V1alpha1().PXBucketClasses().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Object().V1alpha1().PXBucketClasses().Informer()}, nil
 
 	}
 

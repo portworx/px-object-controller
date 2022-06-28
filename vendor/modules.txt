@@ -133,6 +133,7 @@ github.com/google/go-cmp/cmp/internal/value
 github.com/google/gofuzz
 github.com/google/gofuzz/bytesource
 # github.com/google/uuid v1.3.0
+## explicit
 github.com/google/uuid
 # github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 github.com/grpc-ecosystem/go-grpc-middleware
@@ -183,7 +184,7 @@ github.com/libopenstorage/gossip/pkg/probation
 github.com/libopenstorage/gossip/proto
 github.com/libopenstorage/gossip/proto/state
 github.com/libopenstorage/gossip/types
-# github.com/libopenstorage/openstorage v8.0.1-0.20190926212733-daaed777713e+incompatible => github.com/libopenstorage/openstorage v1.0.1-0.20220608215924-d8e6f0feea09
+# github.com/libopenstorage/openstorage v9.4.20+incompatible => github.com/libopenstorage/openstorage v1.0.1-0.20220628004541-5a7fab82f7b1
 ## explicit
 github.com/libopenstorage/openstorage/alerts
 github.com/libopenstorage/openstorage/api
@@ -750,7 +751,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
 # github.com/kubernetes-incubator/external-storage => github.com/libopenstorage/external-storage v5.1.1-0.20190919185747-9394ee8dd536+incompatible
-# github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220608215924-d8e6f0feea09
+# github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220628004541-5a7fab82f7b1
 # k8s.io/api => k8s.io/api v0.24.0
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.24.0
 # k8s.io/apimachinery => k8s.io/apimachinery v0.24.0

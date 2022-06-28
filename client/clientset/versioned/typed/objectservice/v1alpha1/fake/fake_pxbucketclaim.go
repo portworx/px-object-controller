@@ -16,13 +16,13 @@ import (
 
 // FakePXBucketClaims implements PXBucketClaimInterface
 type FakePXBucketClaims struct {
-	Fake *FakeObjectserviceV1alpha1
+	Fake *FakeObjectV1alpha1
 	ns   string
 }
 
-var pxbucketclaimsResource = schema.GroupVersionResource{Group: "objectservice.portworx.io", Version: "v1alpha1", Resource: "pxbucketclaims"}
+var pxbucketclaimsResource = schema.GroupVersionResource{Group: "object.portworx.io", Version: "v1alpha1", Resource: "pxbucketclaims"}
 
-var pxbucketclaimsKind = schema.GroupVersionKind{Group: "objectservice.portworx.io", Version: "v1alpha1", Kind: "PXBucketClaim"}
+var pxbucketclaimsKind = schema.GroupVersionKind{Group: "object.portworx.io", Version: "v1alpha1", Kind: "PXBucketClaim"}
 
 // Get takes name of the pXBucketClaim, and returns the corresponding pXBucketClaim object, and an error if there is any.
 func (c *FakePXBucketClaims) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PXBucketClaim, err error) {
