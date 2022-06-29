@@ -14,6 +14,7 @@ import (
 // +groupName=object.portworx.io
 // +kubebuilder:printcolumn:name="Provisioned",type=string,JSONPath=`.status.provisioned`,description="Indicates whether the bucket has been provisioned for this claim"
 // +kubebuilder:printcolumn:name="BucketID",type=string,JSONPath=`.status.bucketId`,description="Indicates the bucket ID for this provisioned bucketclaim"
+// +kubebuilder:printcolumn:name="BackendType",type=string,JSONPath=`.status.backendType`,description="Indicates the backend type for this provisioned bucketclaim"
 type PXBucketClaim struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
@@ -57,15 +58,19 @@ type BucketClaimStatus struct {
 
 	// bucketId indicates the bucket ID
 	// +optional
-	BucketID string `json:"bucketId,omitempty" protobuf:"varint,1,opt,name=bucketId"`
+	BucketID string `json:"bucketId,omitempty" protobuf:"varint,2,opt,name=bucketId"`
 
 	// region indicates the region where the bucket is created.
 	// +optional
-	Region string `json:"region,omitempty" protobuf:"varint,1,opt,name=region"`
+	Region string `json:"region,omitempty" protobuf:"varint,3,opt,name=region"`
 
 	// DeletionPolicy is the deletion policy that the PXBucketClaim was created with
 	// +optional
-	DeletionPolicy DeletionPolicy `json:"deletionPolicy" protobuf:"bytes,2,opt,name=deletionPolicy"`
+	DeletionPolicy DeletionPolicy `json:"deletionPolicy" protobuf:"bytes,4,opt,name=deletionPolicy"`
+
+	// BackendType is the backend type that this PXBucketClaim was created with
+	// +optional
+	BackendType string `json:"backendType" protobuf:"varint,5,opt,name=backendType"`
 }
 
 // +genclient
@@ -134,6 +139,7 @@ type PXBucketClassList struct {
 // +kubebuilder:printcolumn:name="AccessGranted",type=boolean,JSONPath=`.status.accessGranted`,description="Indicates if access has been granted for a given bucket"
 // +kubebuilder:printcolumn:name="CredentialsSecretName",type=string,JSONPath=`.status.credentialsSecretName`,description="The secret with connection info for the bucket"
 // +kubebuilder:printcolumn:name="BucketID",type=string,JSONPath=`.status.bucketId`,description="The bucket ID for this access object"
+// +kubebuilder:printcolumn:name="BackendType",type=string,JSONPath=`.status.backendType`,description="The backend type for this access object"
 type PXBucketAccess struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
@@ -182,7 +188,11 @@ type BucketAccessStatus struct {
 
 	// bucketId is a reference to the bucket ID for this access
 	// +optional
-	BucketId string `json:"bucketId,omitempty" protobuf:"varint,3,opt,name=bucketId"`
+	BucketId string `json:"bucketId,omitempty" protobuf:"varint,4,opt,name=bucketId"`
+
+	// backendType is the backend type that this PXBucketClaim was created with
+	// +optional
+	BackendType string `json:"backendType" protobuf:"bytes,5,opt,name=backendType"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

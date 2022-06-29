@@ -6,13 +6,15 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/kubernetes-csi/csi-lib-utils/leaderelection"
 	"github.com/libopenstorage/openstorage/api/server/sdk"
 	"github.com/libopenstorage/openstorage/bucket"
 	"github.com/libopenstorage/openstorage/bucket/drivers/fake"
+	"github.com/libopenstorage/openstorage/bucket/drivers/s3"
 	"github.com/libopenstorage/openstorage/pkg/correlation"
 	"github.com/libopenstorage/openstorage/pkg/storagepolicy"
 	"github.com/portworx/kvdb"
@@ -41,6 +43,8 @@ const (
 	envResyncPeriod                = "RESYNC_PERIOD"
 	envRetryIntervalStart          = "RETRY_INTERVAL_START"
 	envRetryIntervalMax            = "RETRY_INTERVAL_MAX"
+	envS3AdminAccessKeyID          = "S3_ADMIN_ACCESS_KEY_ID"
+	envS3AdminSecretAccessKey      = "S3_ADMIN_SECRET_ACCESS_KEY"
 )
 
 var (
@@ -55,10 +59,11 @@ var (
 	leaderElectionRetryPeriod   = 5 * time.Second
 	sdkPort                     = "18020"
 	restPort                    = "18021"
-	bucketDriverType            = "fake"
 	resyncPeriod                = 15 * time.Minute
 	retryIntervalStart          = 1 * time.Second
 	retryIntervalMax            = 5 * time.Minute
+	s3AccessKeyID               = ""
+	s3SecretAccessKey           = ""
 )
 
 func parseFlags() error {
@@ -75,10 +80,11 @@ func parseFlags() error {
 	y.Int(&workers, envWorkerThreads, "Number of worker threads.")
 	y.String(&sdkPort, envSDKPort, "Openstorage SDK server port")
 	y.String(&restPort, envRestPort, "Openstorage REST server port")
-	y.String(&bucketDriverType, envBucketDriver, "Openstorage bucket driver to use. Choices: fake, s3")
 	y.Duration(&resyncPeriod, envResyncPeriod, "Resync interval of the controller.")
 	y.Duration(&retryIntervalStart, envRetryIntervalStart, "Initial retry interval of failed bucket creation/access or deletion/revoke. It doubles with each failure, up to retry-interval-max. Default is 1 second.")
 	y.Duration(&retryIntervalMax, envRetryIntervalMax, "Maximum retry interval of failed bucket/access creation or deletion/revoke. Default is 5 minutes.")
+	y.String(&s3AccessKeyID, envS3AdminAccessKeyID, "Openstorage S3 Bucket Driver Access Key ID")
+	y.String(&s3SecretAccessKey, envS3AdminSecretAccessKey, "Openstorage S3 Bucket Driver Access Secret Key")
 
 	return y.ParseEnv()
 }
@@ -103,23 +109,23 @@ func main() {
 		logrus.Fatalf("failed to initialize billing sink: %v", err)
 	}
 
-	// Create and start bucket driver
-	// TODO support multiple drivers
-	var bucketDriver bucket.BucketDriver
-	bucketDriverType = strings.ToLower(bucketDriverType)
-	switch bucketDriverType {
-	case "fake":
-		bucketDriver = fake.New()
-	case "s3":
-		// TODO GG
-	default:
-		logrus.Fatalf("invalid bucket driver type. Valid driver types are: fake, s3")
-	}
+	// Create and start bucket drivers
+	fakeBucketDriver := fake.New()
+	driversMap := make(map[string]bucket.BucketDriver)
+	driversMap[fakeBucketDriver.String()] = fakeBucketDriver
 	go func() {
-		if err := bucketDriver.Start(); err != http.ErrServerClosed {
-			logrus.Errorf("failed to start driver %s: %v", bucketDriver.String(), err)
+		if err := fakeBucketDriver.Start(); err != http.ErrServerClosed {
+			logrus.Errorf("failed to start driver %s: %v", fakeBucketDriver.String(), err)
 		}
 	}()
+	s3Config := &aws.Config{
+		Credentials: credentials.NewStaticCredentials(s3AccessKeyID, s3SecretAccessKey, ""),
+	}
+	s3Driver, err := s3.New(s3Config)
+	if err != nil {
+		logrus.Fatalf("failed to create new s3 driver: %v", err)
+	}
+	driversMap[s3Driver.String()] = s3Driver
 
 	// Create SDK object and start in background
 	u, err := url.Parse("kv-mem://localhost")
@@ -150,7 +156,7 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("failed to start SDK server for driver: %v", err)
 	}
-	sdkServer.UseBucketDrivers(bucketDriver)
+	sdkServer.UseBucketDrivers(driversMap)
 	go sdkServer.Start()
 
 	// Create controller object

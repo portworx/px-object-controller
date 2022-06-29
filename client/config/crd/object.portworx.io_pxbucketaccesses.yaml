@@ -31,6 +31,10 @@ spec:
       jsonPath: .status.bucketId
       name: BucketID
       type: string
+    - description: The backend type for this access object
+      jsonPath: .status.backendType
+      name: BackendType
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -65,6 +69,9 @@ spec:
                 type: boolean
               accountId:
                 description: accountId is a reference to the account ID for this access
+                type: string
+              backendType:
+                description: backendType is the backend type that this PXBucketClaim was created with
                 type: string
               bucketId:
                 description: bucketId is a reference to the bucket ID for this access

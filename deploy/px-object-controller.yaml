@@ -27,8 +27,20 @@ spec:
         - name: px-object-controller
           image: ggriffiths/px-object-controller:latest
           imagePullPolicy: Always
+          env:
+          - name: S3_ADMIN_ACCESS_KEY_ID
+            valueFrom:
+                secretKeyRef:
+                  name: px-object-s3-admin-credentials
+                  key: access-key-id
+          - name: S3_ADMIN_SECRET_ACCESS_KEY
+            valueFrom:
+                secretKeyRef:
+                  name: px-object-s3-admin-credentials
+                  key: secret-access-key
       volumes:
         - name: socket-dir
           hostPath:
             path: /var/lib/kubelet/plugins/osd.openstorage.org
             type: DirectoryOrCreate
+    

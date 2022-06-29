@@ -27,6 +27,10 @@ spec:
       jsonPath: .status.bucketId
       name: BucketID
       type: string
+    - description: Indicates the backend type for this provisioned bucketclaim
+      jsonPath: .status.backendType
+      name: BackendType
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -50,6 +54,9 @@ spec:
           status:
             description: status represents the current information of a bucket.
             properties:
+              backendType:
+                description: BackendType is the backend type that this PXBucketClaim was created with
+                type: string
               bucketId:
                 description: bucketId indicates the bucket ID
                 type: string
