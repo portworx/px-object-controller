@@ -38,6 +38,16 @@ spec:
                 secretKeyRef:
                   name: px-object-s3-admin-credentials
                   key: secret-access-key
+          - name: PURE_FB_ADMIN_ACCESS_KEY_ID
+            valueFrom:
+                secretKeyRef:
+                  name: px-object-fb-admin-credentials
+                  key: access-key-id
+          - name: PURE_FB_ADMIN_SECRET_ACCESS_KEY
+            valueFrom:
+                secretKeyRef:
+                  name: px-object-fb-admin-credentials
+                  key: secret-access-key
       volumes:
         - name: socket-dir
           hostPath:

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/libopenstorage/openstorage/bucket"
 	"github.com/libopenstorage/openstorage/pkg/correlation"
 	crdv1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	clientset "github.com/portworx/px-object-controller/client/clientset/versioned"
@@ -41,6 +42,7 @@ type Config struct {
 	ResyncPeriod       time.Duration
 	RetryIntervalStart time.Duration
 	RetryIntervalMax   time.Duration
+	BucketDrivers      map[string]bucket.BucketDriver
 }
 
 // Controller represents a controller server

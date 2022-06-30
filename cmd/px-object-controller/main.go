@@ -45,6 +45,8 @@ const (
 	envRetryIntervalMax            = "RETRY_INTERVAL_MAX"
 	envS3AdminAccessKeyID          = "S3_ADMIN_ACCESS_KEY_ID"
 	envS3AdminSecretAccessKey      = "S3_ADMIN_SECRET_ACCESS_KEY"
+	envPureFBAdminAccessKeyID      = "PURE_FB_ADMIN_ACCESS_KEY_ID"
+	envPureFBAdminSecretAccessKey  = "PURE_FB_ADMIN_SECRET_ACCESS_KEY"
 )
 
 var (
@@ -64,6 +66,8 @@ var (
 	retryIntervalMax            = 5 * time.Minute
 	s3AccessKeyID               = ""
 	s3SecretAccessKey           = ""
+	pureFBAccessKeyID           = ""
+	pureFBSecretAccessKey       = ""
 )
 
 func parseFlags() error {
@@ -85,6 +89,8 @@ func parseFlags() error {
 	y.Duration(&retryIntervalMax, envRetryIntervalMax, "Maximum retry interval of failed bucket/access creation or deletion/revoke. Default is 5 minutes.")
 	y.String(&s3AccessKeyID, envS3AdminAccessKeyID, "Openstorage S3 Bucket Driver Access Key ID")
 	y.String(&s3SecretAccessKey, envS3AdminSecretAccessKey, "Openstorage S3 Bucket Driver Access Secret Key")
+	y.String(&pureFBAccessKeyID, envPureFBAdminAccessKeyID, "Openstorage Pure FB Bucket Driver Access Key ID")
+	y.String(&pureFBSecretAccessKey, envPureFBAdminSecretAccessKey, "Openstorage Pure FB Bucket Driver Access Secret Key")
 
 	return y.ParseEnv()
 }
@@ -126,6 +132,16 @@ func main() {
 		logrus.Fatalf("failed to create new s3 driver: %v", err)
 	}
 	driversMap[s3Driver.String()] = s3Driver
+	pureFBEndpoint := "http://nfs.dogfood-skittles.dev.purestorage.com"
+	pureFBConfig := &aws.Config{
+		Credentials: credentials.NewStaticCredentials(pureFBAccessKeyID, pureFBSecretAccessKey, ""),
+	}
+	pureFBConfig = pureFBConfig.WithEndpoint(pureFBEndpoint).WithRegion("grant-region").WithDisableSSL(true).WithS3ForcePathStyle(true)
+	pureFBDriver, err := s3.New(pureFBConfig)
+	if err != nil {
+		logrus.Fatalf("failed to create new s3 driver: %v", err)
+	}
+	driversMap["PureFBDriver"] = pureFBDriver
 
 	// Create SDK object and start in background
 	u, err := url.Parse("kv-mem://localhost")
@@ -161,7 +177,8 @@ func main() {
 
 	// Create controller object
 	ctrl, err := controller.New(&controller.Config{
-		SdkUDS: sdkSocket,
+		SdkUDS:        sdkSocket,
+		BucketDrivers: driversMap,
 	})
 	if err != nil {
 		logrus.Error(err.Error())
