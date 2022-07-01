@@ -175,6 +175,12 @@ px-object-controller:
 	@echo "Building the cluster px-object-controller binary"
 	@cd cmd/px-object-controller && CGO_ENABLED=0 go build $(BUILD_OPTIONS) -o $(BIN)/px-object-controller
 
+sample-app:
+	@echo "Building the sample app binary"
+	@cd examples/sample-app && CGO_ENABLED=0 go build $(BUILD_OPTIONS) -o $(BIN)/sample-app
+	@docker build --tag ggriffiths/pos-sample-app -f examples/sample-app/Dockerfile .
+
+
 container:
 	@echo "Building px-object-controller image $(PX_OBJECT_CONTROLLER_IMG)"
 	docker build --tag $(PX_OBJECT_CONTROLLER_IMG) -f cmd/px-object-controller/Dockerfile .

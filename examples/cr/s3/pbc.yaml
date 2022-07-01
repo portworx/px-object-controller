@@ -1,0 +1,7 @@
+apiVersion: object.portworx.io/v1alpha1
+kind: PXBucketClaim
+metadata:
+  name: s3-pbc
+  namespace: default
+spec:
+  bucketClassName: pbclass-s3

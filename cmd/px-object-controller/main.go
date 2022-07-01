@@ -14,6 +14,7 @@ import (
 	"github.com/libopenstorage/openstorage/api/server/sdk"
 	"github.com/libopenstorage/openstorage/bucket"
 	"github.com/libopenstorage/openstorage/bucket/drivers/fake"
+	"github.com/libopenstorage/openstorage/bucket/drivers/purefb"
 	"github.com/libopenstorage/openstorage/bucket/drivers/s3"
 	"github.com/libopenstorage/openstorage/pkg/correlation"
 	"github.com/libopenstorage/openstorage/pkg/storagepolicy"
@@ -137,7 +138,7 @@ func main() {
 		Credentials: credentials.NewStaticCredentials(pureFBAccessKeyID, pureFBSecretAccessKey, ""),
 	}
 	pureFBConfig = pureFBConfig.WithEndpoint(pureFBEndpoint).WithRegion("grant-region").WithDisableSSL(true).WithS3ForcePathStyle(true)
-	pureFBDriver, err := s3.New(pureFBConfig)
+	pureFBDriver, err := purefb.New(pureFBConfig, pureFBAccessKeyID, pureFBSecretAccessKey)
 	if err != nil {
 		logrus.Fatalf("failed to create new s3 driver: %v", err)
 	}

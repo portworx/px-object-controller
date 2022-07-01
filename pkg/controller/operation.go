@@ -18,6 +18,7 @@ import (
 const (
 	commonObjectServiceKeyPrefix = "object.portworx.io/"
 	backendTypeKey               = commonObjectServiceKeyPrefix + "backend-type"
+	endpointKey                  = commonObjectServiceKeyPrefix + "endpoint"
 )
 
 func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim) {
@@ -122,8 +123,11 @@ func (ctrl *Controller) createAccess(ctx context.Context, pba *crdv1alpha1.PXBuc
 	}
 
 	accessData := make(map[string]string)
-	accessData["accessKeyID"] = resp.Credentials.GetAccessKeyId()
-	accessData["secretAccessKey"] = resp.Credentials.GetSecretAccessKey()
+	accessData["access-key-id"] = resp.Credentials.GetAccessKeyId()
+	accessData["secret-access-key"] = resp.Credentials.GetSecretAccessKey()
+	accessData["endpoint"] = pbclass.Parameters[endpointKey]
+	accessData["region"] = pbclass.Region
+	accessData["bucket-id"] = bucketID
 
 	// If secret exists, update it.
 	credentialsSecretName := getCredentialsSecretName(pba)

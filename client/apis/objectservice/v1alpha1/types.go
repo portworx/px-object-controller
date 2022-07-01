@@ -102,7 +102,7 @@ type PXBucketClass struct {
 
 	// parameters is a key-value map with storage driver specific parameters for creating snapshots.
 	// These values are opaque to Kubernetes.
-	// +optionalW
+	// +optional
 	Parameters map[string]string `json:"parameters,omitempty" protobuf:"bytes,4,rep,name=parameters"`
 }
 
