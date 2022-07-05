@@ -1,0 +1,9 @@
+apiVersion: object.portworx.io/v1alpha1
+kind: PXBucketClass
+metadata:
+  name: pbclass-fb
+region: us-west-2
+deletionPolicy: Delete
+parameters:
+  object.portworx.io/backend-type: PureFBDriver
+  object.portworx.io/endpoint: http://nfs.dogfood-skittles.dev.purestorage.com

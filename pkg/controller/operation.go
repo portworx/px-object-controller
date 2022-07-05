@@ -18,6 +18,7 @@ import (
 const (
 	commonObjectServiceKeyPrefix = "object.portworx.io/"
 	backendTypeKey               = commonObjectServiceKeyPrefix + "backend-type"
+	endpointKey                  = commonObjectServiceKeyPrefix + "endpoint"
 )
 
 func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim) {
@@ -55,6 +56,7 @@ func (ctrl *Controller) createBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 	})
 	if err != nil {
 		logrus.WithContext(ctx).Infof("create bucket %s failed: %v", pbc.Name, err)
+		return err
 	}
 
 	logrus.WithContext(ctx).Infof("bucket %q created", pbc.Name)
@@ -87,9 +89,9 @@ func (ctrl *Controller) setupContextFromClass(ctx context.Context, pbclass *crdv
 
 		return ctx, err
 	}
-	if backendTypeValue != "S3Driver" &&
-		backendTypeValue != "FakeDriver" {
-		err := fmt.Errorf("PXBucketClass parameter %s is invalid. Possible values are: S3Driver or FakeDriver", backendTypeKey)
+
+	if _, ok = ctrl.config.BucketDrivers[backendTypeValue]; !ok {
+		err := fmt.Errorf("PXBucketClass parameter %s is invalid. Possible values are: %v", backendTypeKey, ctrl.config.BucketDrivers)
 		logrus.WithContext(ctx).Error(err)
 
 		return ctx, err
@@ -121,8 +123,11 @@ func (ctrl *Controller) createAccess(ctx context.Context, pba *crdv1alpha1.PXBuc
 	}
 
 	accessData := make(map[string]string)
-	accessData["accessKeyID"] = resp.Credentials.GetAccessKeyId()
-	accessData["secretAccessKey"] = resp.Credentials.GetSecretAccessKey()
+	accessData["access-key-id"] = resp.Credentials.GetAccessKeyId()
+	accessData["secret-access-key"] = resp.Credentials.GetSecretAccessKey()
+	accessData["endpoint"] = pbclass.Parameters[endpointKey]
+	accessData["region"] = pbclass.Region
+	accessData["bucket-id"] = bucketID
 
 	// If secret exists, update it.
 	credentialsSecretName := getCredentialsSecretName(pba)

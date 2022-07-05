@@ -239,7 +239,7 @@ github.com/libopenstorage/gossip/pkg/probation
 github.com/libopenstorage/gossip/proto
 github.com/libopenstorage/gossip/proto/state
 github.com/libopenstorage/gossip/types
-# github.com/libopenstorage/openstorage v9.4.20+incompatible => github.com/libopenstorage/openstorage v1.0.1-0.20220629201359-a8bb0c960c6a
+# github.com/libopenstorage/openstorage v9.4.20+incompatible => github.com/libopenstorage/openstorage v1.0.1-0.20220705221354-e90572ccf240
 ## explicit
 github.com/libopenstorage/openstorage/alerts
 github.com/libopenstorage/openstorage/api
@@ -251,6 +251,7 @@ github.com/libopenstorage/openstorage/api/server/sdk
 github.com/libopenstorage/openstorage/api/spec
 github.com/libopenstorage/openstorage/bucket
 github.com/libopenstorage/openstorage/bucket/drivers/fake
+github.com/libopenstorage/openstorage/bucket/drivers/purefb
 github.com/libopenstorage/openstorage/bucket/drivers/s3
 github.com/libopenstorage/openstorage/cluster
 github.com/libopenstorage/openstorage/cluster/manager
@@ -807,7 +808,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
 # github.com/kubernetes-incubator/external-storage => github.com/libopenstorage/external-storage v5.1.1-0.20190919185747-9394ee8dd536+incompatible
-# github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220629201359-a8bb0c960c6a
+# github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220705221354-e90572ccf240
 # k8s.io/api => k8s.io/api v0.24.0
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.24.0
 # k8s.io/apimachinery => k8s.io/apimachinery v0.24.0
