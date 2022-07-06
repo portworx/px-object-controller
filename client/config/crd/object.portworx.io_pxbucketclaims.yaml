@@ -66,6 +66,9 @@ spec:
                 - Delete
                 - Retain
                 type: string
+              endpoint:
+                description: Endpoint is the endpoint that this bucket was provisioned with
+                type: string
               provisioned:
                 description: provisioned indicates if the bucket is created.
                 type: boolean

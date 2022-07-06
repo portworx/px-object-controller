@@ -82,6 +82,7 @@ func parseFlags() error {
 	y.Duration(&leaderElectionLeaseDuration, envLeaderElectionLeaseDuration, "Duration, in seconds, that non-leader candidates will wait to force acquire leadership. Defaults to 15 seconds.")
 	y.Duration(&leaderElectionRenewDeadline, envLeaderElectionRenewDeadline, "Duration, in seconds, that the acting leader will retry refreshing leadership before giving up. Defaults to 10 seconds.")
 	y.Duration(&leaderElectionRetryPeriod, envLeaderElectionRetryPeriod, "Duration, in seconds, the LeaderElector clients should wait between tries of actions. Defaults to 5 seconds.")
+
 	y.Int(&workers, envWorkerThreads, "Number of worker threads.")
 	y.String(&sdkPort, envSDKPort, "Openstorage SDK server port")
 	y.String(&restPort, envRestPort, "Openstorage REST server port")
@@ -133,16 +134,15 @@ func main() {
 		logrus.Fatalf("failed to create new s3 driver: %v", err)
 	}
 	driversMap[s3Driver.String()] = s3Driver
-	pureFBEndpoint := "http://nfs.dogfood-skittles.dev.purestorage.com"
 	pureFBConfig := &aws.Config{
 		Credentials: credentials.NewStaticCredentials(pureFBAccessKeyID, pureFBSecretAccessKey, ""),
 	}
-	pureFBConfig = pureFBConfig.WithEndpoint(pureFBEndpoint).WithRegion("grant-region").WithDisableSSL(true).WithS3ForcePathStyle(true)
+	pureFBConfig = pureFBConfig.WithDisableSSL(true).WithS3ForcePathStyle(true)
 	pureFBDriver, err := purefb.New(pureFBConfig, pureFBAccessKeyID, pureFBSecretAccessKey)
 	if err != nil {
 		logrus.Fatalf("failed to create new s3 driver: %v", err)
 	}
-	driversMap["PureFBDriver"] = pureFBDriver
+	driversMap[pureFBDriver.String()] = pureFBDriver
 
 	// Create SDK object and start in background
 	u, err := url.Parse("kv-mem://localhost")
