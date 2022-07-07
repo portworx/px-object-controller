@@ -40,6 +40,7 @@ func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 	_, err := ctrl.bucketClient.DeleteBucket(ctx, &api.BucketDeleteRequest{
 		BucketId: pbc.Status.BucketID,
 		Region:   pbc.Status.Region,
+		Endpoint: pbc.Status.Endpoint,
 	})
 	if err != nil {
 		logrus.WithContext(ctx).Infof("delete bucket %s failed: %v", pbc.Name, err)
@@ -51,8 +52,9 @@ func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 
 func (ctrl *Controller) createBucket(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim, pbclass *crdv1alpha1.PXBucketClass) error {
 	_, err := ctrl.bucketClient.CreateBucket(ctx, &api.BucketCreateRequest{
-		Name:   string(pbc.UID),
-		Region: pbclass.Region,
+		Name:     string(pbc.UID),
+		Region:   pbclass.Region,
+		Endpoint: pbclass.Parameters[endpointKey],
 	})
 	if err != nil {
 		logrus.WithContext(ctx).Infof("create bucket %s failed: %v", pbc.Name, err)

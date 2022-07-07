@@ -71,6 +71,10 @@ type BucketClaimStatus struct {
 	// BackendType is the backend type that this PXBucketClaim was created with
 	// +optional
 	BackendType string `json:"backendType" protobuf:"varint,5,opt,name=backendType"`
+
+	// Endpoint is the endpoint that this bucket was provisioned with
+	// +optional
+	Endpoint string `json:"endpoint" protobuf:"varint,6,opt,name=endpoint"`
 }
 
 // +genclient
