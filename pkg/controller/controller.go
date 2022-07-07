@@ -185,18 +185,22 @@ func (ctrl *Controller) processBucket(ctx context.Context, key string) error {
 		return nil
 	}
 	bucketClaim, err := ctrl.bucketLister.PXBucketClaims(namespace).Get(name)
-	if err == nil {
+	if err == nil && bucketClaim.ObjectMeta.DeletionTimestamp == nil {
 		var bucketClass *crdv1alpha1.PXBucketClass
 		if bucketClaim.Spec.BucketClassName != nil {
 			bucketClass, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClasses().Get(ctx, *bucketClaim.Spec.BucketClassName, metav1.GetOptions{})
 			if err != nil {
+				ctrl.eventRecorder.Event(bucketClaim, v1.EventTypeWarning, "CreateBucketError", fmt.Sprintf("failed to get bucket class %v", key))
 				return err
 			}
 		} else {
-			return errors.New("PXBucketClaim must reference a PXBucketClass")
+			errMsg := fmt.Sprintf("PXBucketClaim %v must reference a PXBucketClass", key)
+			ctrl.eventRecorder.Event(bucketClaim, v1.EventTypeWarning, "CreateBucketError", errMsg)
+			return errors.New(errMsg)
 		}
 		ctx, err := ctrl.setupContextFromClass(ctx, bucketClass)
 		if err != nil {
+			ctrl.eventRecorder.Event(bucketClaim, v1.EventTypeWarning, "CreateBucketError", fmt.Sprintf("invalid bucketclass: %v", err))
 			return err
 		}
 
@@ -286,7 +290,7 @@ func (ctrl *Controller) processAccess(ctx context.Context, key string) error {
 		return nil
 	}
 	bucketAccess, err := ctrl.accessLister.PXBucketAccesses(namespace).Get(name)
-	if err == nil {
+	if err == nil && bucketAccess.ObjectMeta.DeletionTimestamp == nil {
 		var bucketClass *crdv1alpha1.PXBucketClass
 		if bucketAccess.Spec.BucketClassName != "" {
 			bucketClass, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClasses().Get(ctx, bucketAccess.Spec.BucketClassName, metav1.GetOptions{})
@@ -311,10 +315,14 @@ func (ctrl *Controller) processAccess(ctx context.Context, key string) error {
 		if bucketAccess.Spec.BucketClaimName != "" {
 			pbc, err := ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClaims(bucketAccess.Namespace).Get(ctx, bucketAccess.Spec.BucketClaimName, metav1.GetOptions{})
 			if err != nil {
+				errMsg := fmt.Sprintf("failed to get bucketclaim %s", bucketAccess.Spec.BucketClaimName)
+				ctrl.eventRecorder.Event(bucketAccess, v1.EventTypeWarning, "GrantAccessError", errMsg)
 				return err
 			}
 			if pbc.Status == nil {
-				return fmt.Errorf("bucket claim %s exists but is not yet provisioned", bucketAccess.Spec.BucketClaimName)
+				errMsg := fmt.Sprintf("bucket claim %s exists but is not yet provisioned", bucketAccess.Spec.BucketClaimName)
+				ctrl.eventRecorder.Event(bucketAccess, v1.EventTypeWarning, "GrantAccessError", errMsg)
+				return fmt.Errorf(errMsg)
 			}
 
 			bucketID = string(pbc.GetUID())
@@ -350,9 +358,7 @@ func (ctrl *Controller) processAccess(ctx context.Context, key string) error {
 	ctx = ctrl.setupContextFromValue(ctx, bucketaccess.Status.BackendType)
 
 	logrus.WithContext(ctx).Infof("deleting bucketaccess %q", key)
-	ctrl.revokeAccess(ctx, bucketaccess)
-
-	return nil
+	return ctrl.revokeAccess(ctx, bucketaccess)
 }
 
 // enqueueBucketClaimWork adds bucketclaim to given work queue.
