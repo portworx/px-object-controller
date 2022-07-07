@@ -178,8 +178,10 @@ func main() {
 
 	// Create controller object
 	ctrl, err := controller.New(&controller.Config{
-		SdkUDS:        sdkSocket,
-		BucketDrivers: driversMap,
+		SdkUDS:             sdkSocket,
+		BucketDrivers:      driversMap,
+		RetryIntervalStart: retryIntervalStart,
+		RetryIntervalMax:   retryIntervalMax,
 	})
 	if err != nil {
 		logrus.Error(err.Error())

@@ -12,6 +12,7 @@ import (
 
 	"github.com/portworx/px-object-controller/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,35 +20,61 @@ const (
 	commonObjectServiceKeyPrefix = "object.portworx.io/"
 	backendTypeKey               = commonObjectServiceKeyPrefix + "backend-type"
 	endpointKey                  = commonObjectServiceKeyPrefix + "endpoint"
+
+	commonObjectServiceFinalizerKeyPrefix = "finalizers.object.portworx.io/"
+	accessGrantedFinalizer                = commonObjectServiceFinalizerKeyPrefix + "access-granted"
+	bucketProvisionedFinalizer            = commonObjectServiceFinalizerKeyPrefix + "bucket-provisioned"
+	accessSecretFinalizer                 = commonObjectServiceFinalizerKeyPrefix + "access-secret"
 )
 
-func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim) {
+func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim) error {
 
 	if pbc.Status == nil || !pbc.Status.Provisioned {
 		logrus.WithContext(ctx).Infof("bucket not yet provisioned. skipping backened delete")
 		ctrl.bucketStore.Delete(pbc)
-		return
+		return nil
 	}
 
 	// Issue delete if provisioned and deletionPolicy is delete
 	if pbc.Status.DeletionPolicy == crdv1alpha1.PXBucketClaimRetain {
 		logrus.WithContext(ctx).Infof("skipping delete bucket as deletionPolicy was retain")
+
+		err := ctrl.removeBucketFinalizers(ctx, pbc)
+		if err != nil {
+			errMsg := fmt.Sprintf("bucket claim %s/%s remove finalizer failed: %v", pbc.Namespace, pbc.Name, err)
+			logrus.WithContext(ctx).Errorf(errMsg)
+			ctrl.eventRecorder.Event(pbc, v1.EventTypeWarning, "DeleteBucketError", errMsg)
+			return err
+		}
+
 		ctrl.bucketStore.Delete(pbc)
-		return
+		return nil
 	}
 
-	// Provisioned and deletionPolicy is delte. Delete the bucket here.
+	// Provisioned and deletionPolicy is delete. Delete the bucket here.
 	_, err := ctrl.bucketClient.DeleteBucket(ctx, &api.BucketDeleteRequest{
 		BucketId: pbc.Status.BucketID,
 		Region:   pbc.Status.Region,
 		Endpoint: pbc.Status.Endpoint,
 	})
 	if err != nil {
-		logrus.WithContext(ctx).Infof("delete bucket %s failed: %v", pbc.Name, err)
+		errMsg := fmt.Sprintf("delete bucket %s failed: %v", pbc.Name, err)
+		logrus.WithContext(ctx).Errorf(errMsg)
+		ctrl.eventRecorder.Event(pbc, v1.EventTypeWarning, "DeleteBucketError", errMsg)
 	}
-	ctrl.bucketStore.Delete(pbc)
 
+	err = ctrl.removeBucketFinalizers(ctx, pbc)
+	if err != nil {
+		errMsg := fmt.Sprintf("bucket claim %s/%s remove finalizer failed: %v", pbc.Namespace, pbc.Name, err)
+		logrus.WithContext(ctx).Errorf(errMsg)
+		ctrl.eventRecorder.Event(pbc, v1.EventTypeWarning, "DeleteBucketError", errMsg)
+		return err
+	}
+
+	ctrl.bucketStore.Delete(pbc)
 	logrus.WithContext(ctx).Infof("bucket %q deleted", pbc.Name)
+
+	return nil
 }
 
 func (ctrl *Controller) createBucket(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim, pbclass *crdv1alpha1.PXBucketClass) error {
@@ -58,6 +85,7 @@ func (ctrl *Controller) createBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 	})
 	if err != nil {
 		logrus.WithContext(ctx).Infof("create bucket %s failed: %v", pbc.Name, err)
+		ctrl.eventRecorder.Event(pbc, v1.EventTypeWarning, "CreateBucketError", fmt.Sprintf("failed to create bucket: %v", err))
 		return err
 	}
 
@@ -70,13 +98,20 @@ func (ctrl *Controller) createBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 	pbc.Status.DeletionPolicy = pbclass.DeletionPolicy
 	pbc.Status.BucketID = string(pbc.UID)
 	pbc.Status.BackendType = pbclass.Parameters[backendTypeKey]
+	pbc.Finalizers = append(pbc.Finalizers, bucketProvisionedFinalizer)
 	pbc, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClaims(pbc.Namespace).Update(ctx, pbc, metav1.UpdateOptions{})
 	if err != nil {
+		ctrl.eventRecorder.Event(pbc, v1.EventTypeWarning, "CreateBucketError", fmt.Sprintf("failed to update bucket: %v", err))
 		return err
 	}
 
 	_, err = ctrl.storeBucketUpdate(pbc)
-	return err
+	if err != nil {
+		return err
+	}
+
+	ctrl.eventRecorder.Event(pbc, v1.EventTypeNormal, "CreateBucketSuccess", fmt.Sprintf("successfully provisioned bucket %v", pbc.UID))
+	return nil
 }
 
 func (ctrl *Controller) setupContextFromValue(ctx context.Context, backendType string) context.Context {
@@ -120,7 +155,9 @@ func (ctrl *Controller) createAccess(ctx context.Context, pba *crdv1alpha1.PXBuc
 		AccountName: getAccountName(pbclass),
 	})
 	if err != nil {
-		logrus.WithContext(ctx).Infof("create bucket access %s failed: %v", pba.Name, err)
+		errMsg := fmt.Sprintf("create bucket access %s failed: %v", pba.Name, err)
+		logrus.WithContext(ctx).Errorf(errMsg)
+		ctrl.eventRecorder.Event(pba, v1.EventTypeWarning, "GrantAccessError", errMsg)
 		return err
 	}
 
@@ -140,17 +177,22 @@ func (ctrl *Controller) createAccess(ctx context.Context, pba *crdv1alpha1.PXBuc
 			ctx,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      credentialsSecretName,
-					Namespace: pba.Namespace,
+					Name:       credentialsSecretName,
+					Namespace:  pba.Namespace,
+					Finalizers: []string{accessSecretFinalizer},
 				},
 				StringData: accessData,
 			},
 			metav1.CreateOptions{},
 		)
 		if err != nil {
+			errMsg := fmt.Sprintf("failed to create access secret for bucket access %s/%s: %v", pba.Namespace, pba.Name, err)
+			ctrl.eventRecorder.Event(pba, v1.EventTypeWarning, "GrantAccessError", errMsg)
 			return err
 		}
 	} else if err != nil {
+		errMsg := fmt.Sprintf("failed to get secret for bucket access %s/%s: %v", pba.Namespace, pba.Name, err)
+		ctrl.eventRecorder.Event(pba, v1.EventTypeWarning, "GrantAccessError", errMsg)
 		return err
 	}
 
@@ -163,21 +205,33 @@ func (ctrl *Controller) createAccess(ctx context.Context, pba *crdv1alpha1.PXBuc
 	pba.Status.AccountId = resp.GetAccountId()
 	pba.Status.BucketId = bucketID
 	pba.Status.BackendType = pbclass.Parameters[backendTypeKey]
+	pba.Finalizers = []string{accessGrantedFinalizer}
 	pba, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketAccesses(pba.Namespace).Update(ctx, pba, metav1.UpdateOptions{})
 	if err != nil {
+		errMsg := fmt.Sprintf("failed to update bucket access %s/%s: %v", pba.Namespace, pba.Name, err)
+		ctrl.eventRecorder.Event(pba, v1.EventTypeWarning, "GrantAccessError", errMsg)
 		return err
 	}
 
 	_, err = ctrl.storeAccessUpdate(pba)
-	return err
+	if err != nil {
+		return err
+	}
+
+	ctrl.eventRecorder.Event(pba, v1.EventTypeNormal, "GrantAccessSuccess", fmt.Sprintf("successfully granted access to BucketClaim %s with BucketAccess %s", pba.Spec.BucketClaimName, pba.Name))
+	return nil
 }
 
-func (ctrl *Controller) revokeAccess(ctx context.Context, pba *crdv1alpha1.PXBucketAccess) {
+func (ctrl *Controller) revokeAccess(ctx context.Context, pba *crdv1alpha1.PXBucketAccess) error {
 
 	if pba.Status == nil || !pba.Status.AccessGranted {
 		logrus.WithContext(ctx).Infof("bucket not yet provisioned. skipping backened delete")
-		ctrl.accessStore.Delete(pba)
-		return
+		err := ctrl.removeAccessFinalizers(ctx, pba)
+		if err != nil {
+			return err
+		}
+
+		return ctrl.accessStore.Delete(pba)
 	}
 
 	// Provisioned and deletionPolicy is delte. Delete the bucket here.
@@ -186,20 +240,32 @@ func (ctrl *Controller) revokeAccess(ctx context.Context, pba *crdv1alpha1.PXBuc
 		AccountId: pba.Status.AccountId,
 	})
 	if err != nil {
-		logrus.WithContext(ctx).Infof("revoke bucket %s failed: %v", pba.Name, err)
+		errMsg := fmt.Sprintf("revoke bucket %s failed: %v", pba.Name, err)
+		logrus.WithContext(ctx).Errorf(errMsg)
+		ctrl.eventRecorder.Event(pba, v1.EventTypeWarning, "RevokeAccessError", errMsg)
+		return err
 	}
 
-	err = ctrl.k8sClient.CoreV1().Secrets(pba.Namespace).Delete(ctx, pba.Status.CredentialsSecretName, metav1.DeleteOptions{})
-	if k8s_errors.IsNotFound(err) {
-		logrus.WithContext(ctx).Infof("bucket access secret %s already deleted", pba.Status.CredentialsSecretName)
-		return
-	} else if err != nil {
-		logrus.WithContext(ctx).Infof("bucket access secret %s delete failed: %v", pba.Status.CredentialsSecretName, err)
-		return
+	err = ctrl.removeSecretFinalizersAndDelete(ctx, pba.Status.CredentialsSecretName, pba.Namespace)
+	if err != nil {
+		errMsg := fmt.Sprintf("bucket access secret %s delete failed: %v", pba.Status.CredentialsSecretName, err)
+		logrus.WithContext(ctx).Errorf(errMsg)
+		ctrl.eventRecorder.Event(pba, v1.EventTypeWarning, "RevokeAccessError", errMsg)
+		return err
+	}
+
+	err = ctrl.removeAccessFinalizers(ctx, pba)
+	if err != nil {
+		errMsg := fmt.Sprintf("bucket access %s/%s remove finalizer failed: %v", pba.Namespace, pba.Name, err)
+		logrus.WithContext(ctx).Errorf(errMsg)
+		ctrl.eventRecorder.Event(pba, v1.EventTypeWarning, "RevokeAccessError", errMsg)
+		return err
 	}
 
 	ctrl.accessStore.Delete(pba)
 	logrus.WithContext(ctx).Infof("bucket access %q deleted", pba.Name)
+
+	return nil
 }
 
 func (ctrl *Controller) storeBucketUpdate(bucket interface{}) (bool, error) {
@@ -208,4 +274,48 @@ func (ctrl *Controller) storeBucketUpdate(bucket interface{}) (bool, error) {
 
 func (ctrl *Controller) storeAccessUpdate(access interface{}) (bool, error) {
 	return utils.StoreObjectUpdate(ctrl.accessStore, access, "access")
+}
+
+func (ctrl *Controller) removeBucketFinalizers(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim) error {
+	pbc, err := ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClaims(pbc.Namespace).Get(ctx, pbc.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	pbc.Finalizers = []string{}
+	_, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClaims(pbc.Namespace).Update(ctx, pbc, metav1.UpdateOptions{})
+	return err
+}
+
+func (ctrl *Controller) removeAccessFinalizers(ctx context.Context, pba *crdv1alpha1.PXBucketAccess) error {
+	pba, err := ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketAccesses(pba.Namespace).Get(ctx, pba.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	pba.Finalizers = []string{}
+	_, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketAccesses(pba.Namespace).Update(ctx, pba, metav1.UpdateOptions{})
+	return err
+}
+
+func (ctrl *Controller) removeSecretFinalizersAndDelete(ctx context.Context, secretName, secretNamespace string) error {
+	secret, err := ctrl.k8sClient.CoreV1().Secrets(secretNamespace).Get(ctx, secretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	secret.Finalizers = []string{}
+	secret, err = ctrl.k8sClient.CoreV1().Secrets(secret.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.k8sClient.CoreV1().Secrets(secret.Namespace).Delete(ctx, secret.Name, metav1.DeleteOptions{})
+	if k8s_errors.IsNotFound(err) {
+		logrus.WithContext(ctx).Infof("bucket access secret %s/%s already deleted", secretNamespace, secretName)
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }
