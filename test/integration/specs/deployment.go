@@ -6,6 +6,7 @@ package specs
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	v1 "k8s.io/api/apps/v1"
@@ -50,29 +51,16 @@ var (
 				Spec: corev1.PodSpec{
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{
-							Name: "pxwbuild",
+							Name: "pwxbuild",
 						},
 					},
 					ServiceAccountName: "px-object-controller",
 					Containers: []corev1.Container{
 						{
-							Name:  "px-object-controller",
-							Image: "portworx/px-object-controller:latest",
-							Args: []string{
-								"--leader-election=true",
-								"--usage-interval=1m",
-								"--log-level=trace",
-								"--collector-source=pds",
-								"--pds-api-endpoint=https://staging.pds-dev.io",
-								"--pds-token-endpoint=http://release-staging-api.portworx.dev",
-							},
+							Name:            "px-object-controller",
+							Image:           os.Getenv("PX_OBJECT_CONTROLLER_IMG"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Env: []corev1.EnvVar{
-								{
-									Name:  "ZUORA_ENDPOINT",
-									Value: "https://rest.apisandbox.zuora.com",
-								},
-							},
+							Env:             []corev1.EnvVar{},
 						},
 					},
 				},
@@ -81,15 +69,23 @@ var (
 	}
 )
 
+// EnvConfig represents a config for setting up a test env
+type EnvConfig struct {
+	Namespace                  string
+	S3AdminAccessKeyID         string
+	S3AdminSecretAccessKey     string
+	PureFBAdminAccessKeyID     string
+	PureFBAdminSecretAccessKey string
+
+	ImagePullSecretUsername string
+	ImagePullSecretPassword string
+}
+
 // TestConfig represents a config for setting up a test
 type TestConfig struct {
-	Namespace         string
-	PdsUsername       string
-	PdsPassword       string
-	PdsClientID       string
-	PdsClientSecret   string
-	ZuoraClientID     string
-	ZuoraClientSecret string
+	Env          *EnvConfig
+	Namespace    string
+	RetainBucket bool
 }
 
 func addDeploymentSecret(deployment *v1.Deployment, envName, secretName, secretKey string) *v1.Deployment {
@@ -109,55 +105,36 @@ func addDeploymentSecret(deployment *v1.Deployment, envName, secretName, secretK
 }
 
 // GetPXObjectControllerDeployment returns a px-object deployment object
-func GetPXObjectControllerDeployment(mc *TestConfig) *v1.Deployment {
+func GetPXObjectControllerDeployment(ec *EnvConfig) *v1.Deployment {
 	deployment := &simpleDeploymentTemplate
 
-	// Add PDS secret references
-	deployment = addDeploymentSecret(deployment, "PDS_USERNAME", "pds-credentials", "username")
-	deployment = addDeploymentSecret(deployment, "PDS_PASSWORD", "pds-credentials", "password")
-	deployment = addDeploymentSecret(deployment, "PDS_CLIENT_ID", "pds-credentials", "client-id")
-	deployment = addDeploymentSecret(deployment, "PDS_CLIENT_SECRET", "pds-credentials", "client-secret")
-
-	// Add zuora secret refs
-	deployment = addDeploymentSecret(deployment, "ZUORA_CLIENT_ID", "zuora-credentials", "client-id")
-	deployment = addDeploymentSecret(deployment, "ZUORA_CLIENT_SECRET", "zuora-credentials", "client-secret")
+	// Add AWS S3 secret references
+	deployment = addDeploymentSecret(deployment, "S3_ADMIN_ACCESS_KEY_ID", "object-service-credentials", "S3AdminAccessKeyID")
+	deployment = addDeploymentSecret(deployment, "S3_ADMIN_SECRET_ACCESS_KEY", "object-service-credentials", "S3AdminSecretAccessKey")
+	deployment = addDeploymentSecret(deployment, "PURE_FB_ADMIN_ACCESS_KEY_ID", "object-service-credentials", "PureFBAdminAccessKeyID")
+	deployment = addDeploymentSecret(deployment, "PURE_FB_ADMIN_SECRET_ACCESS_KEY", "object-service-credentials", "PureFBAdminSecretAccessKey")
 
 	return deployment
 }
 
 // CreatePXObjectControllerDeployment creates the px-object deployment and any dependencies
-func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, mc *TestConfig) error {
-	deployment := GetPXObjectControllerDeployment(mc)
-	if mc.Namespace == "" {
-		mc.Namespace = "kube-system"
+func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *EnvConfig) error {
+	deployment := GetPXObjectControllerDeployment(ec)
+	if ec.Namespace == "" {
+		ec.Namespace = "kube-system"
 	}
 
-	// Create PDS Credentials
-	_, err := k8sClient.CoreV1().Secrets(mc.Namespace).Create(context.TODO(), &corev1.Secret{
+	// Create Object service Credentials
+	_, err := k8sClient.CoreV1().Secrets(ec.Namespace).Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "pds-credentials",
-			Namespace: mc.Namespace,
+			Name:      "object-service-credentials",
+			Namespace: ec.Namespace,
 		},
 		Data: map[string][]byte{
-			"username":      []byte(mc.PdsUsername),
-			"password":      []byte(mc.PdsPassword),
-			"client-id":     []byte(mc.PdsClientID),
-			"client-secret": []byte(mc.PdsClientSecret),
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	// Create Zuora Credentials
-	_, err = k8sClient.CoreV1().Secrets(mc.Namespace).Create(context.TODO(), &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "zuora-credentials",
-			Namespace: mc.Namespace,
-		},
-		Data: map[string][]byte{
-			"client-id":     []byte(mc.ZuoraClientID),
-			"client-secret": []byte(mc.ZuoraClientSecret),
+			"S3AdminAccessKeyID":         []byte(ec.S3AdminAccessKeyID),
+			"S3AdminSecretAccessKey":     []byte(ec.S3AdminSecretAccessKey),
+			"PureFBAdminAccessKeyID":     []byte(ec.PureFBAdminAccessKeyID),
+			"PureFBAdminSecretAccessKey": []byte(ec.PureFBAdminSecretAccessKey),
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
@@ -165,10 +142,10 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, mc *Tes
 	}
 
 	// Create RBAC
-	_, err = k8sClient.CoreV1().ServiceAccounts(mc.Namespace).Create(context.TODO(), &corev1.ServiceAccount{
+	_, err = k8sClient.CoreV1().ServiceAccounts(ec.Namespace).Create(context.TODO(), &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "px-object-controller",
-			Namespace: mc.Namespace,
+			Namespace: ec.Namespace,
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
@@ -178,44 +155,6 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, mc *Tes
 	_, err = k8sClient.RbacV1().ClusterRoles().Create(context.TODO(), &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "px-object-controller-runner",
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs:     []string{"get", "list"},
-			},
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = k8sClient.RbacV1().ClusterRoleBindings().Create(context.TODO(), &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "px-object-controller-role",
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      "px-object-controller",
-				Namespace: mc.Namespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			Name:     "px-object-controller-runner",
-			APIGroup: "rbac.authorization.k8s.io",
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = k8sClient.RbacV1().Roles(mc.Namespace).Create(context.TODO(), &rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "px-object-controller",
-			Namespace: mc.Namespace,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -231,12 +170,12 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, mc *Tes
 			{
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
-				Verbs:     []string{"get"},
+				Verbs:     []string{"get", "list", "create", "delete", "update"},
 			},
 			{
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"create", "update", "get"},
+				APIGroups: []string{"object.portworx.io"},
+				Resources: []string{"pxbucketclaims", "pxbucketaccesses", "pxbucketclasses"},
+				Verbs:     []string{"list", "watch", "create", "update", "patch", "get"},
 			},
 		},
 	}, metav1.CreateOptions{})
@@ -244,10 +183,48 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, mc *Tes
 		return err
 	}
 
-	_, err = k8sClient.RbacV1().RoleBindings(mc.Namespace).Create(context.TODO(), &rbacv1.RoleBinding{
+	_, err = k8sClient.RbacV1().ClusterRoleBindings().Create(context.TODO(), &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "px-object-controller-role",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      "px-object-controller",
+				Namespace: ec.Namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     "px-object-controller-runner",
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = k8sClient.RbacV1().Roles(ec.Namespace).Create(context.TODO(), &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "px-object-controller",
-			Namespace: mc.Namespace,
+			Namespace: ec.Namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+				Verbs:     []string{"get", "watch", "list", "delete", "update", "create"},
+			},
+		},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = k8sClient.RbacV1().RoleBindings(ec.Namespace).Create(context.TODO(), &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "px-object-controller",
+			Namespace: ec.Namespace,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -266,7 +243,7 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, mc *Tes
 	}
 
 	// Create deployment
-	_, err = k8sClient.AppsV1().Deployments(mc.Namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
+	_, err = k8sClient.AppsV1().Deployments(ec.Namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -279,12 +256,12 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, mc *Tes
 		Jitter:   0,
 	}
 	if err := wait.ExponentialBackoff(pxObjectControllerBackoff, func() (bool, error) {
-		dep, err := k8sClient.AppsV1().Deployments(mc.Namespace).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
+		dep, err := k8sClient.AppsV1().Deployments(ec.Namespace).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
 
-		if dep.Status.Replicas == *deployment.Spec.Replicas {
+		if dep.Status.ReadyReplicas == *deployment.Spec.Replicas {
 			return true, nil
 		}
 

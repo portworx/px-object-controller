@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	clientset "github.com/portworx/px-object-controller/client/clientset/versioned"
 	"github.com/portworx/px-object-controller/test/integration/types"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -16,7 +17,8 @@ import (
 )
 
 var (
-	k8sClient *kubernetes.Clientset
+	k8sClient    *kubernetes.Clientset
+	objectClient *clientset.Clientset
 )
 
 func TestMain(m *testing.M) {
@@ -53,6 +55,10 @@ func setup() error {
 	k8sClient, err = kubernetes.NewForConfig(config)
 	if err != nil {
 		logrus.Fatalf("failed to create k8s client: %v", err)
+	}
+	objectClient, err = clientset.NewForConfig(config)
+	if err != nil {
+		logrus.Fatalf("failed to create bucket client: %v", err)
 	}
 
 	// Set log level

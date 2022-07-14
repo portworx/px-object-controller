@@ -48,13 +48,6 @@ func (tc *TestCase) RunTest(t *testing.T, k8sClient *kubernetes.Clientset) {
 		return
 	}
 
-	// Setup PX Object controller
-	err := specs.CreatePXObjectControllerDeployment(k8sClient, &tc.TestConfig)
-	if err != nil {
-		t.Fatalf("failed to create px-object deployment: %v", err)
-		return
-	}
-
 	// NOTE: Tests filtered out by name regex will be marked as passed as well
 	passed := t.Run(tc.TestName, tc.TestFunc(tc))
 	if passed {
