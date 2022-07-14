@@ -187,8 +187,8 @@ func (ctrl *Controller) processBucket(ctx context.Context, key string) error {
 	bucketClaim, err := ctrl.bucketLister.PXBucketClaims(namespace).Get(name)
 	if err == nil && bucketClaim.ObjectMeta.DeletionTimestamp == nil {
 		var bucketClass *crdv1alpha1.PXBucketClass
-		if bucketClaim.Spec.BucketClassName != nil {
-			bucketClass, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClasses().Get(ctx, *bucketClaim.Spec.BucketClassName, metav1.GetOptions{})
+		if bucketClaim.Spec.BucketClassName != "" {
+			bucketClass, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClasses().Get(ctx, bucketClaim.Spec.BucketClassName, metav1.GetOptions{})
 			if err != nil {
 				ctrl.eventRecorder.Event(bucketClaim, v1.EventTypeWarning, "CreateBucketError", fmt.Sprintf("failed to get bucket class %v", key))
 				return err

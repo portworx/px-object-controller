@@ -47,7 +47,7 @@ type BucketClaimSpec struct {
 	// BucketClassName is the name of the PXBucketClass
 	// requested by the PXBucketClaim.
 	// Required.
-	BucketClassName *string `json:"bucketClassName,omitempty" protobuf:"bytes,1,opt,name=bucketClassName"`
+	BucketClassName string `json:"bucketClassName,omitempty" protobuf:"bytes,1,opt,name=bucketClassName"`
 }
 
 // BucketStatus is the status of the PXBucketClaim

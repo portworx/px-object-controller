@@ -164,7 +164,12 @@ integration-test:
 	@echo "Running px-object-controller integration tests"
 	@cd test/integration && go test -tags integrationtest -v -kubeconfig=/tmp/px-object-controller-kubeconfig.yaml
 
-integration-test-suite: kind-setup integration-test kind-teardown
+test-setup:
+	@kubectl apply -f client/config/crd
+	@kubectl -n kube-system create secret docker-registry pwxbuild --docker-username=${PWX_BUILD_USERNAME} --docker-password=${PWX_BUILD_PASSWORD}
+
+
+integration-test-suite: kind-setup test-setup integration-test kind-teardown
 
 codegen:
 	@echo "Generating code"
