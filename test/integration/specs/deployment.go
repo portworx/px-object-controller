@@ -6,6 +6,7 @@ package specs
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	v1 "k8s.io/api/apps/v1"
@@ -57,7 +58,7 @@ var (
 					Containers: []corev1.Container{
 						{
 							Name:            "px-object-controller",
-							Image:           "portworx/px-object-controller:main",
+							Image:           os.Getenv("PX_OBJECT_CONTROLLER_IMG"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Env:             []corev1.EnvVar{},
 						},
