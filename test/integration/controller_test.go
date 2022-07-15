@@ -73,7 +73,7 @@ func BasicRun(tc *types.TestCase) func(*testing.T) {
 		}
 
 		var bucketClaim *v1alpha1.PXBucketClaim
-		err = RetryUntilSuccess("get bucket claim", 3, 5, func() error {
+		err = RetryUntilSuccess("get bucket claim", 5, 6, func() error {
 			bucketClaim, err = objectClient.ObjectV1alpha1().PXBucketClaims(tc.TestConfig.Namespace).Get(context.Background(), claimName, v1.GetOptions{})
 			if err != nil {
 				return err
@@ -94,6 +94,14 @@ func BasicRun(tc *types.TestCase) func(*testing.T) {
 			}
 			if bucketClaim.Status.DeletionPolicy != desiredRetainPolicy {
 				return fmt.Errorf("deletion policy for claim %v is invalid. expected: %v, got: %v", bucketClaim.Name, desiredRetainPolicy, bucketClaim.Status.DeletionPolicy)
+			}
+
+			exists, err := CheckBucketExists(t, &tc.TestConfig, bucketClaim.Status.BucketID)
+			if err != nil {
+				t.Fatalf("check bucket exists failed: %v", err)
+			}
+			if !exists {
+				t.Fatalf("bucket provisioned but does not exist: %v", err)
 			}
 
 			return nil

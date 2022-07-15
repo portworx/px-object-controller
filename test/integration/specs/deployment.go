@@ -261,7 +261,7 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *Env
 			return false, err
 		}
 
-		if dep.Status.ReadyReplicas == *deployment.Spec.Replicas {
+		if dep.Status.ReadyReplicas == *deployment.Spec.Replicas && dep.Status.UpdatedReplicas == *deployment.Spec.Replicas {
 			return true, nil
 		}
 
