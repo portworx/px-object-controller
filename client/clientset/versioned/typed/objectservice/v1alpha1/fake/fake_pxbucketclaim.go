@@ -101,7 +101,7 @@ func (c *FakePXBucketClaims) UpdateStatus(ctx context.Context, pXBucketClaim *v1
 // Delete takes name of the pXBucketClaim and deletes it. Returns an error if one occurs.
 func (c *FakePXBucketClaims) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(pxbucketclaimsResource, c.ns, name, opts), &v1alpha1.PXBucketClaim{})
+		Invokes(testing.NewDeleteAction(pxbucketclaimsResource, c.ns, name), &v1alpha1.PXBucketClaim{})
 
 	return err
 }
