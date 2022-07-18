@@ -101,7 +101,7 @@ func (c *FakePXBucketAccesses) UpdateStatus(ctx context.Context, pXBucketAccess 
 // Delete takes name of the pXBucketAccess and deletes it. Returns an error if one occurs.
 func (c *FakePXBucketAccesses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(pxbucketaccessesResource, c.ns, name, opts), &v1alpha1.PXBucketAccess{})
+		Invokes(testing.NewDeleteAction(pxbucketaccessesResource, c.ns, name), &v1alpha1.PXBucketAccess{})
 
 	return err
 }

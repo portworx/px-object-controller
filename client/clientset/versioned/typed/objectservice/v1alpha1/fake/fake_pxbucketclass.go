@@ -83,7 +83,7 @@ func (c *FakePXBucketClasses) Update(ctx context.Context, pXBucketClass *v1alpha
 // Delete takes name of the pXBucketClass and deletes it. Returns an error if one occurs.
 func (c *FakePXBucketClasses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(pxbucketclassesResource, name, opts), &v1alpha1.PXBucketClass{})
+		Invokes(testing.NewRootDeleteAction(pxbucketclassesResource, name), &v1alpha1.PXBucketClass{})
 	return err
 }
 
