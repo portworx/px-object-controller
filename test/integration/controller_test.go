@@ -147,6 +147,11 @@ func BasicRun(tc *types.TestCase) func(*testing.T) {
 				t.Fatalf("delete bucket set but bucket exists")
 			}
 		}
+		if exists {
+			defer func() {
+				CleanupBucket(t, &tc.TestConfig, bucketClaim.Status.BucketID)
+			}()
+		}
 	}
 }
 
@@ -196,4 +201,30 @@ func CheckBucketExists(t *testing.T, tc *specs.TestConfig, bucketID string) (boo
 	}
 
 	return true, nil
+}
+
+func CleanupBucket(t *testing.T, tc *specs.TestConfig, bucketID string) error {
+	s3Config := &aws.Config{
+		Credentials: credentials.NewStaticCredentials(tc.Env.S3AdminAccessKeyID, tc.Env.S3AdminSecretAccessKey, ""),
+	}
+
+	// Override the aws config with the region
+	s3Config = s3Config.WithRegion("us-west-2")
+
+	sess, err := session.NewSession(s3Config)
+	if err != nil {
+		return err
+	}
+
+	svc := s3.New(sess)
+	_, err = svc.DeleteBucket(&s3.DeleteBucketInput{
+		Bucket: aws.String(bucketID),
+	})
+	if err != nil && strings.Contains(err.Error(), s3.ErrCodeNoSuchBucket) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }
