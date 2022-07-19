@@ -7,6 +7,7 @@ import (
 	"github.com/libopenstorage/openstorage/api"
 	"github.com/libopenstorage/openstorage/api/server/sdk"
 	"github.com/libopenstorage/openstorage/pkg/grpcserver"
+	"github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	crdv1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 
@@ -78,8 +79,10 @@ func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 }
 
 func (ctrl *Controller) createBucket(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim, pbclass *crdv1alpha1.PXBucketClass) error {
+	bucketID := getBucketID(pbc)
+
 	_, err := ctrl.bucketClient.CreateBucket(ctx, &api.BucketCreateRequest{
-		Name:     string(pbc.UID),
+		Name:     bucketID,
 		Region:   pbclass.Region,
 		Endpoint: pbclass.Parameters[endpointKey],
 	})
@@ -96,7 +99,7 @@ func (ctrl *Controller) createBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 	pbc.Status.Provisioned = true
 	pbc.Status.Region = pbclass.Region
 	pbc.Status.DeletionPolicy = pbclass.DeletionPolicy
-	pbc.Status.BucketID = string(pbc.UID)
+	pbc.Status.BucketID = bucketID
 	pbc.Status.BackendType = pbclass.Parameters[backendTypeKey]
 	pbc.Finalizers = append(pbc.Finalizers, bucketProvisionedFinalizer)
 	pbc, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClaims(pbc.Namespace).Update(ctx, pbc, metav1.UpdateOptions{})
@@ -139,14 +142,14 @@ func (ctrl *Controller) setupContextFromClass(ctx context.Context, pbclass *crdv
 }
 
 func getAccountName(pbclass *crdv1alpha1.PXBucketClass) string {
-	return fmt.Sprintf("account-%v", pbclass.ObjectMeta.UID)
+	return fmt.Sprintf("px-os-account-%v", pbclass.ObjectMeta.UID)
 }
 
 func getCredentialsSecretName(pba *crdv1alpha1.PXBucketAccess) string {
 	if pba.Status != nil && pba.Status.CredentialsSecretName != "" {
 		return pba.Status.CredentialsSecretName
 	}
-	return fmt.Sprintf("poc-credentials-%s", pba.Name)
+	return fmt.Sprintf("px-os-credentials-%s", pba.Name)
 }
 
 func (ctrl *Controller) createAccess(ctx context.Context, pba *crdv1alpha1.PXBucketAccess, pbclass *crdv1alpha1.PXBucketClass, bucketID string) error {
@@ -318,4 +321,8 @@ func (ctrl *Controller) removeSecretFinalizersAndDelete(ctx context.Context, sec
 	}
 
 	return nil
+}
+
+func getBucketID(pbc *v1alpha1.PXBucketClaim) string {
+	return fmt.Sprintf("px-os-%s", pbc.GetUID())
 }

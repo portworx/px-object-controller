@@ -325,7 +325,7 @@ func (ctrl *Controller) processAccess(ctx context.Context, key string) error {
 				return fmt.Errorf(errMsg)
 			}
 
-			bucketID = string(pbc.GetUID())
+			bucketID = getBucketID(pbc)
 		}
 		if bucketAccess.Spec.ExistingBucketId != "" {
 			bucketID = bucketAccess.Spec.ExistingBucketId
