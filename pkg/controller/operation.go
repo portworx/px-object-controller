@@ -101,6 +101,7 @@ func (ctrl *Controller) createBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 	pbc.Status.DeletionPolicy = pbclass.DeletionPolicy
 	pbc.Status.BucketID = bucketID
 	pbc.Status.BackendType = pbclass.Parameters[backendTypeKey]
+	pbc.Status.Endpoint = pbclass.Parameters[endpointKey]
 	pbc.Finalizers = append(pbc.Finalizers, bucketProvisionedFinalizer)
 	pbc, err = ctrl.k8sBucketClient.ObjectV1alpha1().PXBucketClaims(pbc.Namespace).Update(ctx, pbc, metav1.UpdateOptions{})
 	if err != nil {
@@ -113,7 +114,7 @@ func (ctrl *Controller) createBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 		return err
 	}
 
-	ctrl.eventRecorder.Event(pbc, v1.EventTypeNormal, "CreateBucketSuccess", fmt.Sprintf("successfully provisioned bucket %v", pbc.UID))
+	ctrl.eventRecorder.Event(pbc, v1.EventTypeNormal, "CreateBucketSuccess", fmt.Sprintf("successfully provisioned bucket %v", bucketID))
 	return nil
 }
 

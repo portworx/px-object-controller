@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -25,10 +26,10 @@ var (
 	simpleDeploymentTemplate = v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "px-object-controller",
-			Namespace: "kube-system",
+			Namespace: "default",
 		},
 		Spec: v1.DeploymentSpec{
-			Replicas: int32Ptr(1),
+			Replicas: int32Ptr(2),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "px-object-controller",
@@ -86,6 +87,9 @@ type TestConfig struct {
 	Env          *EnvConfig
 	Namespace    string
 	RetainBucket bool
+	BackendType  string
+	Region       string
+	Endpoint     string
 }
 
 func addDeploymentSecret(deployment *v1.Deployment, envName, secretName, secretKey string) *v1.Deployment {
@@ -121,7 +125,7 @@ func GetPXObjectControllerDeployment(ec *EnvConfig) *v1.Deployment {
 func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *EnvConfig) error {
 	deployment := GetPXObjectControllerDeployment(ec)
 	if ec.Namespace == "" {
-		ec.Namespace = "kube-system"
+		ec.Namespace = "default"
 	}
 
 	// Create Object service Credentials
@@ -138,7 +142,7 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *Env
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		logrus.Errorf("failed to create secret: %v", err)
 	}
 
 	// Create RBAC
@@ -149,7 +153,7 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *Env
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		logrus.Errorf("failed to create service account: %v", err)
 	}
 
 	_, err = k8sClient.RbacV1().ClusterRoles().Create(context.TODO(), &rbacv1.ClusterRole{
@@ -180,7 +184,7 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *Env
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		logrus.Errorf("failed to create cluster role: %v", err)
 	}
 
 	_, err = k8sClient.RbacV1().ClusterRoleBindings().Create(context.TODO(), &rbacv1.ClusterRoleBinding{
@@ -201,7 +205,7 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *Env
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		logrus.Errorf("failed to create role binding: %v", err)
 	}
 
 	_, err = k8sClient.RbacV1().Roles(ec.Namespace).Create(context.TODO(), &rbacv1.Role{
@@ -218,7 +222,7 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *Env
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		logrus.Errorf("failed to create role: %v", err)
 	}
 
 	_, err = k8sClient.RbacV1().RoleBindings(ec.Namespace).Create(context.TODO(), &rbacv1.RoleBinding{
@@ -239,13 +243,13 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *Env
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		logrus.Errorf("failed to create rolebinding: %v", err)
 	}
 
 	// Create deployment
 	_, err = k8sClient.AppsV1().Deployments(ec.Namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		logrus.Errorf("failed to create deployment: %v", err)
 	}
 
 	// Wait for deployment to be ready
