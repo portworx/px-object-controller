@@ -2,8 +2,8 @@ apiVersion: object.portworx.io/v1alpha1
 kind: PXBucketClass
 metadata:
   name: pbclass-s3
-region: us-west-2
+region: us-west-1
 deletionPolicy: Delete
 parameters:
   object.portworx.io/backend-type: S3Driver
-  object.portworx.io/endpoint: s3.us-west-2.amazonaws.com
+  object.portworx.io/endpoint: s3.us-west-1.amazonaws.com

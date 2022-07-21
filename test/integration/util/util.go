@@ -9,8 +9,8 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// CreateObjectClass creates an object class
-func CreateObjectClass(objectClient *clientset.Clientset, name string, retainBucket bool, region string, backendType string, endpoint string) error {
+// CreateBucketClass creates an bucket class
+func CreateBucketClass(objectClient *clientset.Clientset, name string, retainBucket bool, region string, backendType string, endpoint string) error {
 	deletionPolicy := v1alpha1.PXBucketClaimDelete
 	if retainBucket {
 		deletionPolicy = v1alpha1.PXBucketClaimRetain
@@ -34,8 +34,8 @@ func CreateObjectClass(objectClient *clientset.Clientset, name string, retainBuc
 	return nil
 }
 
-// DeleteObjectClass deletes an object class
-func DeleteObjectClass(objectClient *clientset.Clientset, name string) error {
+// DeleteBucketClass deletes an bucket class
+func DeleteBucketClass(objectClient *clientset.Clientset, name string) error {
 	err := objectClient.ObjectV1alpha1().PXBucketClasses().Delete(context.Background(), name, v1.DeleteOptions{})
 	if err != nil {
 		return err
@@ -44,8 +44,8 @@ func DeleteObjectClass(objectClient *clientset.Clientset, name string) error {
 	return nil
 }
 
-// CreateObjectClaim creates an object claim
-func CreateObjectClaim(objectClient *clientset.Clientset, namespace string, name string, bucketClassName string) error {
+// CreateBucketClaim creates an bucket claim
+func CreateBucketClaim(objectClient *clientset.Clientset, namespace string, name string, bucketClassName string) error {
 	_, err := objectClient.ObjectV1alpha1().PXBucketClaims(namespace).Create(context.Background(), &v1alpha1.PXBucketClaim{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
@@ -58,12 +58,47 @@ func CreateObjectClaim(objectClient *clientset.Clientset, namespace string, name
 	return err
 }
 
-// DeleteObjectClaim deletes an object claim
-func DeleteObjectClaim(objectClient *clientset.Clientset, namespace, name string) error {
+// DeleteBucketClaim deletes an bucket claim
+func DeleteBucketClaim(objectClient *clientset.Clientset, namespace, name string) error {
 	err := objectClient.ObjectV1alpha1().PXBucketClaims(namespace).Delete(context.Background(), name, v1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// CreateBucketAccess creates a bucket claim
+func CreateBucketAccess(objectClient *clientset.Clientset, namespace string, name string, bucketClassName, bucketClaimName string) error {
+	_, err := objectClient.ObjectV1alpha1().PXBucketAccesses(namespace).Create(context.Background(), &v1alpha1.PXBucketAccess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: v1alpha1.BucketAccessSpec{
+			BucketClassName: bucketClassName,
+			BucketClaimName: bucketClaimName,
+		},
+	}, v1.CreateOptions{})
+	return err
+}
+
+// CreateImportedBucketAccess creates a bucket claim
+func CreateImportedBucketAccess(objectClient *clientset.Clientset, namespace string, name string, bucketClassName, existingBucketID string) error {
+	_, err := objectClient.ObjectV1alpha1().PXBucketAccesses(namespace).Create(context.Background(), &v1alpha1.PXBucketAccess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: v1alpha1.BucketAccessSpec{
+			BucketClassName:  bucketClassName,
+			ExistingBucketId: existingBucketID,
+		},
+	}, v1.CreateOptions{})
+	return err
+}
+
+// DeleteBucketAccess deletes a bucket claim
+func DeleteBucketAccess(objectClient *clientset.Clientset, namespace string, name string) error {
+	return objectClient.ObjectV1alpha1().PXBucketAccesses(namespace).Delete(context.Background(), name, v1.DeleteOptions{})
 }
