@@ -81,7 +81,8 @@ var testBasicCases = []types.TestCase{
 			Endpoint:    "http://nfs.dogfood-skittles.dev.purestorage.com",
 			Region:      "region-1",
 		},
-		TestFunc: DynamicProvisionBasic,
+		TestFunc:   DynamicProvisionBasic,
+		ShouldSkip: shouldSkipPureFB,
 	},
 	{
 		TestName: "[Pure FB] Basic bucket provision and access with retain",
@@ -93,7 +94,8 @@ var testBasicCases = []types.TestCase{
 			Region:       "region-1",
 			RetainBucket: true,
 		},
-		TestFunc: DynamicProvisionBasic,
+		TestFunc:   DynamicProvisionBasic,
+		ShouldSkip: shouldSkipPureFB,
 	},
 	{
 		TestName: "[Pure FB] Import existing bucket",
@@ -105,15 +107,22 @@ var testBasicCases = []types.TestCase{
 			Region:       "region-1",
 			RetainBucket: true,
 		},
-		TestFunc: PreProvsionedBasic,
+		TestFunc:   PreProvsionedBasic,
+		ShouldSkip: shouldSkipPureFB,
 	},
 }
+
+var testBasicPureFBCases = []types.TestCase{}
 
 var basicEnv = &specs.EnvConfig{
 	S3AdminAccessKeyID:         os.Getenv("S3_ADMIN_ACCESS_KEY_ID"),
 	S3AdminSecretAccessKey:     os.Getenv("S3_ADMIN_SECRET_ACCESS_KEY"),
 	PureFBAdminAccessKeyID:     os.Getenv("PURE_FB_ADMIN_ACCESS_KEY_ID"),
 	PureFBAdminSecretAccessKey: os.Getenv("PURE_FB_ADMIN_SECRET_ACCESS_KEY"),
+}
+
+func shouldSkipPureFB(tc *types.TestCase) bool {
+	return basicEnv.PureFBAdminAccessKeyID == "" || basicEnv.PureFBAdminSecretAccessKey == ""
 }
 
 func TestBasic(t *testing.T) {
@@ -181,7 +190,6 @@ func DynamicProvisionBasic(tc *types.TestCase) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create bucketaccess")
 		}
-
 		var bucketAccessSecretName string
 		err = RetryUntilSuccess("check if access granted", 5, 6, func() error {
 			bucketAccess, err := objectClient.ObjectV1alpha1().PXBucketAccesses(tc.TestConfig.Namespace).Get(context.Background(), accessName, v1.GetOptions{})

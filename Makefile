@@ -165,8 +165,7 @@ integration-test:
 	@echo "Running px-object-controller integration tests"
 	kind load docker-image --name px-object-controller $(PX_OBJECT_CONTROLLER_IMG)
 	@cd test/integration && PX_OBJECT_CONTROLLER_IMG=${PX_OBJECT_CONTROLLER_IMG} go test -tags integrationtest -v -kubeconfig=/tmp/px-object-controller-kubeconfig.yaml
-	kubectl -n kube-system logs -l app=px-object-controller
-
+	
 test-setup:
 	@kubectl apply -f client/config/crd
 	@kubectl -n kube-system create secret docker-registry pwxbuild --docker-username=${DOCKER_USER} --docker-password=${DOCKER_PASSWORD}
