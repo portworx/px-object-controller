@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/libopenstorage/openstorage/bucket"
 	"github.com/libopenstorage/openstorage/pkg/correlation"
 	crdv1alpha1 "github.com/portworx/px-object-controller/client/apis/objectservice/v1alpha1"
 	clientset "github.com/portworx/px-object-controller/client/clientset/versioned"
@@ -38,11 +37,10 @@ var (
 
 // Config represents a configuration for creating a controller server
 type Config struct {
-	SdkUDS             string
+	SdkEndpoint        string
 	ResyncPeriod       time.Duration
 	RetryIntervalStart time.Duration
 	RetryIntervalMax   time.Duration
-	BucketDrivers      map[string]bucket.BucketDriver
 }
 
 // Controller represents a controller server
@@ -71,7 +69,7 @@ func New(cfg *Config) (*Controller, error) {
 
 	// Get Openstorage Bucket SDK Client
 	sdkBucketClient := client.NewClient(client.Config{
-		SdkUDS: cfg.SdkUDS,
+		SdkEndpoint: cfg.SdkEndpoint,
 	})
 
 	// Get general k8s clients

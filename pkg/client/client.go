@@ -17,7 +17,7 @@ type Client struct {
 }
 
 type Config struct {
-	SdkUDS string
+	SdkEndpoint string
 }
 
 func NewClient(cfg Config) *Client {
@@ -33,13 +33,13 @@ func (c *Client) getConn() (*grpc.ClientConn, error) {
 	if c.conn == nil {
 		var err error
 		c.conn, err = grpcserver.Connect(
-			c.cfg.SdkUDS,
+			c.cfg.SdkEndpoint,
 			[]grpc.DialOption{
 				grpc.WithInsecure(),
 				grpc.WithUnaryInterceptor(correlation.ContextUnaryClientInterceptor),
 			})
 		if err != nil {
-			return nil, fmt.Errorf("Failed to connect to SDK unix domain socket %s: %v", c.cfg.SdkUDS, err)
+			return nil, fmt.Errorf("Failed to connect to SDK unix domain socket %s: %v", c.cfg.SdkEndpoint, err)
 		}
 	}
 
