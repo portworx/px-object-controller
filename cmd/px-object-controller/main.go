@@ -48,6 +48,7 @@ const (
 	envS3AdminSecretAccessKey      = "S3_ADMIN_SECRET_ACCESS_KEY"
 	envPureFBAdminAccessKeyID      = "PURE_FB_ADMIN_ACCESS_KEY_ID"
 	envPureFBAdminSecretAccessKey  = "PURE_FB_ADMIN_SECRET_ACCESS_KEY"
+	envSdkEndpoint                 = "SDK_ENDPOINT"
 )
 
 var (
@@ -69,6 +70,7 @@ var (
 	s3SecretAccessKey           = ""
 	pureFBAccessKeyID           = ""
 	pureFBSecretAccessKey       = ""
+	sdkEndpoint                 = ""
 )
 
 func parseFlags() error {
@@ -93,6 +95,7 @@ func parseFlags() error {
 	y.String(&s3SecretAccessKey, envS3AdminSecretAccessKey, "Openstorage S3 Bucket Driver Access Secret Key")
 	y.String(&pureFBAccessKeyID, envPureFBAdminAccessKeyID, "Openstorage Pure FB Bucket Driver Access Key ID")
 	y.String(&pureFBSecretAccessKey, envPureFBAdminSecretAccessKey, "Openstorage Pure FB Bucket Driver Access Secret Key")
+	y.String(&sdkEndpoint, envSdkEndpoint, "Openstorage SDK Endpoint")
 
 	return y.ParseEnv()
 }
@@ -117,69 +120,76 @@ func main() {
 		logrus.Fatalf("failed to initialize billing sink: %v", err)
 	}
 
-	// Create and start bucket drivers
-	fakeBucketDriver := fake.New()
+	// No endpoint provided, let's start the SDK server locally.
+	// Otherwise, target SDK cluster.
 	driversMap := make(map[string]bucket.BucketDriver)
-	driversMap[fakeBucketDriver.String()] = fakeBucketDriver
-	go func() {
-		if err := fakeBucketDriver.Start(); err != http.ErrServerClosed {
-			logrus.Errorf("failed to start driver %s: %v", fakeBucketDriver.String(), err)
+	if sdkEndpoint == "" {
+		// Create and start bucket drivers
+		fakeBucketDriver := fake.New()
+		driversMap[fakeBucketDriver.String()] = fakeBucketDriver
+		go func() {
+			if err := fakeBucketDriver.Start(); err != http.ErrServerClosed {
+				logrus.Errorf("failed to start driver %s: %v", fakeBucketDriver.String(), err)
+			}
+		}()
+		s3Config := &aws.Config{
+			Credentials: credentials.NewStaticCredentials(s3AccessKeyID, s3SecretAccessKey, ""),
 		}
-	}()
-	s3Config := &aws.Config{
-		Credentials: credentials.NewStaticCredentials(s3AccessKeyID, s3SecretAccessKey, ""),
-	}
-	s3Driver, err := s3.New(s3Config)
-	if err != nil {
-		logrus.Fatalf("failed to create new s3 driver: %v", err)
-	}
-	driversMap[s3Driver.String()] = s3Driver
-	pureFBConfig := &aws.Config{
-		Credentials: credentials.NewStaticCredentials(pureFBAccessKeyID, pureFBSecretAccessKey, ""),
-	}
-	pureFBConfig = pureFBConfig.WithDisableSSL(true).WithS3ForcePathStyle(true)
-	pureFBDriver, err := purefb.New(pureFBConfig, pureFBAccessKeyID, pureFBSecretAccessKey)
-	if err != nil {
-		logrus.Fatalf("failed to create new s3 driver: %v", err)
-	}
-	driversMap[pureFBDriver.String()] = pureFBDriver
+		s3Driver, err := s3.New(s3Config)
+		if err != nil {
+			logrus.Fatalf("failed to create new s3 driver: %v", err)
+		}
+		driversMap[s3Driver.String()] = s3Driver
+		pureFBConfig := &aws.Config{
+			Credentials: credentials.NewStaticCredentials(pureFBAccessKeyID, pureFBSecretAccessKey, ""),
+		}
+		pureFBConfig = pureFBConfig.WithDisableSSL(true).WithS3ForcePathStyle(true)
+		pureFBDriver, err := purefb.New(pureFBConfig, pureFBAccessKeyID, pureFBSecretAccessKey)
+		if err != nil {
+			logrus.Fatalf("failed to create new s3 driver: %v", err)
+		}
+		driversMap[pureFBDriver.String()] = pureFBDriver
 
-	// Create SDK object and start in background
-	u, err := url.Parse("kv-mem://localhost")
-	scheme := u.Scheme
-	kv, err := kvdb.New(scheme, "openstorage", []string{u.String()}, nil, kvdb.LogFatalErrorCB)
-	if err != nil {
-		logrus.Fatalf("failed to initialize kvdb: %v", err)
+		// Create SDK object and start in background
+		u, err := url.Parse("kv-mem://localhost")
+		scheme := u.Scheme
+		kv, err := kvdb.New(scheme, "openstorage", []string{u.String()}, nil, kvdb.LogFatalErrorCB)
+		if err != nil {
+			logrus.Fatalf("failed to initialize kvdb: %v", err)
+		}
+		if err := kvdb.SetInstance(kv); err != nil {
+			logrus.Fatalf("failed set kvdb instance: %v", err)
+		}
+		sp, err := storagepolicy.Init()
+		if err != nil {
+			logrus.Fatalf("failed to initialize storage policy: %v", err)
+		}
+
+		sdkEndpoint = "/var/lib/osd/driver/sdk.sock"
+		os.Remove(sdkEndpoint)
+		if err := os.MkdirAll("/var/lib/osd/driver", 0750); err != nil {
+			logrus.Fatalf("failed to initialize sdk socket location: %v", err)
+		}
+
+		sdkServer, err := sdk.New(&sdk.ServerConfig{
+			Net:           "tcp",
+			Address:       ":" + sdkPort,
+			RestPort:      restPort,
+			Socket:        sdkEndpoint,
+			StoragePolicy: sp,
+		})
+		if err != nil {
+			logrus.Fatalf("failed to start SDK server for driver: %v", err)
+		}
+		sdkServer.UseBucketDrivers(driversMap)
+		go sdkServer.Start()
+	} else {
+		logrus.Infof("Skipping SDK server startup, connecting to %v instead", sdkEndpoint)
 	}
-	if err := kvdb.SetInstance(kv); err != nil {
-		logrus.Fatalf("failed set kvdb instance: %v", err)
-	}
-	sp, err := storagepolicy.Init()
-	if err != nil {
-		logrus.Fatalf("failed to initialize storage policy: %v", err)
-	}
-	sdkSocket := "/var/lib/osd/driver/sdk.sock"
-	os.Remove(sdkSocket)
-	if err := os.MkdirAll("/var/lib/osd/driver", 0750); err != nil {
-		logrus.Fatalf("failed to initialize sdk socket location: %v", err)
-	}
-	sdkServer, err := sdk.New(&sdk.ServerConfig{
-		Net:           "tcp",
-		Address:       ":" + sdkPort,
-		RestPort:      restPort,
-		Socket:        sdkSocket,
-		StoragePolicy: sp,
-	})
-	if err != nil {
-		logrus.Fatalf("failed to start SDK server for driver: %v", err)
-	}
-	sdkServer.UseBucketDrivers(driversMap)
-	go sdkServer.Start()
 
 	// Create controller object
 	ctrl, err := controller.New(&controller.Config{
-		SdkUDS:             sdkSocket,
-		BucketDrivers:      driversMap,
+		SdkEndpoint:        sdkEndpoint,
 		RetryIntervalStart: retryIntervalStart,
 		RetryIntervalMax:   retryIntervalMax,
 	})

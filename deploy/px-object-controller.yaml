@@ -48,6 +48,8 @@ spec:
                 secretKeyRef:
                   name: px-object-fb-admin-credentials
                   key: secret-access-key
+          - name: SDK_ENDPOINT
+            value: "portworx-api:9020"
       volumes:
         - name: socket-dir
           hostPath:

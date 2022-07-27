@@ -28,6 +28,11 @@ const (
 	accessSecretFinalizer                 = commonObjectServiceFinalizerKeyPrefix + "access-secret"
 )
 
+var allowedDrivers = map[string]bool{
+	"S3Driver":     true,
+	"PureFBDriver": true,
+}
+
 func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBucketClaim) error {
 
 	if pbc.Status == nil || !pbc.Status.Provisioned {
@@ -131,8 +136,8 @@ func (ctrl *Controller) setupContextFromClass(ctx context.Context, pbclass *crdv
 		return ctx, err
 	}
 
-	if _, ok = ctrl.config.BucketDrivers[backendTypeValue]; !ok {
-		err := fmt.Errorf("PXBucketClass parameter %s is invalid. Possible values are: %v", backendTypeKey, ctrl.config.BucketDrivers)
+	if _, ok = allowedDrivers[backendTypeValue]; !ok {
+		err := fmt.Errorf("PXBucketClass parameter %s is invalid. Possible values are: %v", backendTypeKey, allowedDrivers)
 		logrus.WithContext(ctx).Error(err)
 
 		return ctx, err
