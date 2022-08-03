@@ -15,26 +15,43 @@ import (
 )
 
 func main() {
-	accessKey := os.Getenv("S3_ACCESS_KEY")
-	secretKey := os.Getenv("S3_SECRET_KEY")
+	accessKey := os.Getenv("S3_ACCESS_KEY_1")
+	secretKey := os.Getenv("S3_SECRET_KEY_1")
+	bucketName := os.Getenv(("S3_BUCKET_NAME_1"))
+	accessKey2 := os.Getenv("S3_ACCESS_KEY_2")
+	secretKey2 := os.Getenv("S3_SECRET_KEY_2")
+	bucketNameTwo := os.Getenv(("S3_BUCKET_NAME_2"))
 	endpointStr := os.Getenv("S3_ENDPOINT")
 	regionStr := os.Getenv("S3_REGION")
-	bucketName := os.Getenv(("S3_BUCKET_NAME"))
 
-	creds := credentials.NewStaticCredentials(accessKey, secretKey, "")
-	_, err := creds.Get()
-	if err != nil {
-		fmt.Printf("bad credentials: %s", err)
-	}
-
-	cfg := aws.NewConfig().WithEndpoint(endpointStr).WithRegion(regionStr).WithDisableSSL(true).WithCredentials(creds).WithS3ForcePathStyle(true)
-	svc := s3.New(session.New(), cfg)
 	for {
+		creds := credentials.NewStaticCredentials(accessKey, secretKey, "")
+		_, err := creds.Get()
+		if err != nil {
+			fmt.Printf("bad credentials: %s", err)
+		}
+		cfg := aws.NewConfig().WithEndpoint(endpointStr).WithRegion(regionStr).WithDisableSSL(true).WithCredentials(creds).WithS3ForcePathStyle(true)
+		svc := s3.New(session.New(), cfg)
 		objName := uuid.New().String()
 		fmt.Printf("--- PUT OBJECT %s IN BUCKET %s ---\n", objName, bucketName)
 		putObject(svc, bucketName, objName)
 		fmt.Printf("--- GET OBJECT %s IN BUCKET %s ---\n", objName, bucketName)
 		getObject(svc, bucketName, objName)
+		fmt.Printf("--- DONE ---\n")
+		fmt.Printf("\n\n")
+
+		creds = credentials.NewStaticCredentials(accessKey2, secretKey2, "")
+		_, err = creds.Get()
+		if err != nil {
+			fmt.Printf("bad credentials: %s", err)
+		}
+		cfg = aws.NewConfig().WithEndpoint(endpointStr).WithRegion(regionStr).WithDisableSSL(true).WithCredentials(creds).WithS3ForcePathStyle(true)
+		svc = s3.New(session.New(), cfg)
+		objName = uuid.New().String()
+		fmt.Printf("--- PUT OBJECT %s IN BUCKET %s ---\n", objName, bucketNameTwo)
+		putObject(svc, bucketNameTwo, objName)
+		fmt.Printf("--- GET OBJECT %s IN BUCKET %s ---\n", objName, bucketNameTwo)
+		getObject(svc, bucketNameTwo, objName)
 		fmt.Printf("--- DONE ---\n")
 		fmt.Printf("\n\n")
 
