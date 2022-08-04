@@ -181,6 +181,11 @@ func CreatePXObjectControllerDeployment(k8sClient *kubernetes.Clientset, ec *Env
 				Resources: []string{"pxbucketclaims", "pxbucketaccesses", "pxbucketclasses"},
 				Verbs:     []string{"list", "watch", "create", "update", "patch", "get"},
 			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"list", "get"},
+			},
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {

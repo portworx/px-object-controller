@@ -3,6 +3,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: sample-app
+  namespace: ns-b
 spec:
   replicas: 1
   selector:
@@ -29,41 +30,38 @@ spec:
           - name: S3_ACCESS_KEY_1
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-fb-pba
+                  name: px-os-credentials-s3-pba
                   key: access-key-id
           - name: S3_SECRET_KEY_1
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-fb-pba
+                  name: px-os-credentials-s3-pba
                   key: secret-access-key
           - name: S3_BUCKET_NAME_1
-            valueFrom:
-                secretKeyRef:
-                  name: px-os-credentials-fb-pba
-                  key: bucket-id
+            value: px-os-4746d482-0e0c-427a-bc70-63c260fb75c2
           - name: S3_ACCESS_KEY_2
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-fb-pba-2 
+                  name: px-os-credentials-s3-pba 
                   key: access-key-id
           - name: S3_SECRET_KEY_2
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-fb-pba-2
+                  name: px-os-credentials-s3-pba
                   key: secret-access-key
           - name: S3_ENDPOINT
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-fb-pba
+                  name: px-os-credentials-s3-pba
                   key: endpoint
           - name: S3_REGION
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-fb-pba
+                  name: px-os-credentials-s3-pba
                   key: region
           - name: S3_BUCKET_NAME_2
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-fb-pba-2
+                  name: px-os-credentials-s3-pba
                   key: bucket-id
     
