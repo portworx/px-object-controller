@@ -67,6 +67,7 @@ func (ctrl *Controller) deleteBucket(ctx context.Context, pbc *crdv1alpha1.PXBuc
 		errMsg := fmt.Sprintf("delete bucket %s failed: %v", pbc.Name, err)
 		logrus.WithContext(ctx).Errorf(errMsg)
 		ctrl.eventRecorder.Event(pbc, v1.EventTypeWarning, "DeleteBucketError", errMsg)
+		return err
 	}
 
 	err = ctrl.removeBucketFinalizers(ctx, pbc)
