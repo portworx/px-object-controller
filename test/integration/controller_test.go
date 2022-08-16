@@ -148,7 +148,7 @@ func DynamicProvisionBasic(tc *types.TestCase) func(*testing.T) {
 		}
 
 		var bucketClaim *v1alpha1.PXBucketClaim
-		err = RetryUntilSuccess("get bucket claim", 5, 6, func() error {
+		err = RetryUntilSuccess("get bucket claim", 5, 10, func() error {
 			bucketClaim, err = objectClient.ObjectV1alpha1().PXBucketClaims(tc.TestConfig.Namespace).Get(context.Background(), claimName, v1.GetOptions{})
 			if err != nil {
 				return err
@@ -191,7 +191,7 @@ func DynamicProvisionBasic(tc *types.TestCase) func(*testing.T) {
 			t.Fatalf("failed to create bucketaccess")
 		}
 		var bucketAccessSecretName string
-		err = RetryUntilSuccess("check if access granted", 5, 6, func() error {
+		err = RetryUntilSuccess("check if access granted", 5, 10, func() error {
 			bucketAccess, err := objectClient.ObjectV1alpha1().PXBucketAccesses(tc.TestConfig.Namespace).Get(context.Background(), accessName, v1.GetOptions{})
 			if err != nil {
 				return err
@@ -222,7 +222,7 @@ func DynamicProvisionBasic(tc *types.TestCase) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("failed to delete bucketaccess %s", accessName)
 		}
-		err = RetryUntilSuccess("check if access revoked", 5, 6, func() error {
+		err = RetryUntilSuccess("check if access revoked", 5, 10, func() error {
 			_, err = k8sClient.CoreV1().Secrets(tc.TestConfig.Namespace).Get(context.Background(), bucketAccessSecretName, v1.GetOptions{})
 			if k8s_errors.IsNotFound(err) {
 				return nil
@@ -238,7 +238,7 @@ func DynamicProvisionBasic(tc *types.TestCase) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("delete object class failed: %v", err)
 		}
-		err = RetryUntilSuccess("check if class deleted", 5, 6, func() error {
+		err = RetryUntilSuccess("check if class deleted", 5, 10, func() error {
 			_, err := objectClient.ObjectV1alpha1().PXBucketClasses().Get(context.Background(), className, v1.GetOptions{})
 			if k8s_errors.IsNotFound(err) {
 				return nil
@@ -254,7 +254,7 @@ func DynamicProvisionBasic(tc *types.TestCase) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("delete object claim failed: %v", err)
 		}
-		err = RetryUntilSuccess("check if claim deleted", 5, 6, func() error {
+		err = RetryUntilSuccess("check if claim deleted", 5, 10, func() error {
 			_, err := objectClient.ObjectV1alpha1().PXBucketClaims(tc.TestConfig.Namespace).Get(context.Background(), claimName, v1.GetOptions{})
 			if k8s_errors.IsNotFound(err) {
 				return nil
@@ -303,7 +303,7 @@ func PreProvsionedBasic(tc *types.TestCase) func(*testing.T) {
 		}
 
 		var bucketClaim *v1alpha1.PXBucketClaim
-		err = RetryUntilSuccess("get bucket claim", 5, 6, func() error {
+		err = RetryUntilSuccess("get bucket claim", 5, 10, func() error {
 			bucketClaim, err = objectClient.ObjectV1alpha1().PXBucketClaims(tc.TestConfig.Namespace).Get(context.Background(), claimName, v1.GetOptions{})
 			if err != nil {
 				return err
@@ -345,7 +345,7 @@ func PreProvsionedBasic(tc *types.TestCase) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("delete object claim failed: %v", err)
 		}
-		err = RetryUntilSuccess("check if claim deleted", 5, 6, func() error {
+		err = RetryUntilSuccess("check if claim deleted", 5, 10, func() error {
 			_, err := objectClient.ObjectV1alpha1().PXBucketClaims(tc.TestConfig.Namespace).Get(context.Background(), claimName, v1.GetOptions{})
 			if k8s_errors.IsNotFound(err) {
 				return nil
@@ -365,7 +365,7 @@ func PreProvsionedBasic(tc *types.TestCase) func(*testing.T) {
 		}
 
 		var bucketAccessSecretName string
-		err = RetryUntilSuccess("check if access granted", 5, 6, func() error {
+		err = RetryUntilSuccess("check if access granted", 5, 10, func() error {
 			bucketAccess, err := objectClient.ObjectV1alpha1().PXBucketAccesses(tc.TestConfig.Namespace).Get(context.Background(), accessName, v1.GetOptions{})
 			if err != nil {
 				return err
@@ -396,7 +396,7 @@ func PreProvsionedBasic(tc *types.TestCase) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("failed to delete bucketaccess %s", accessName)
 		}
-		err = RetryUntilSuccess("check if access revoked", 5, 6, func() error {
+		err = RetryUntilSuccess("check if access revoked", 5, 10, func() error {
 			_, err = k8sClient.CoreV1().Secrets(tc.TestConfig.Namespace).Get(context.Background(), bucketAccessSecretName, v1.GetOptions{})
 			if k8s_errors.IsNotFound(err) {
 				return nil
@@ -412,7 +412,7 @@ func PreProvsionedBasic(tc *types.TestCase) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("delete object class failed: %v", err)
 		}
-		err = RetryUntilSuccess("check if class deleted", 5, 6, func() error {
+		err = RetryUntilSuccess("check if class deleted", 5, 10, func() error {
 			_, err := objectClient.ObjectV1alpha1().PXBucketClasses().Get(context.Background(), className, v1.GetOptions{})
 			if k8s_errors.IsNotFound(err) {
 				return nil
