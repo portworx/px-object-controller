@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -33,7 +34,7 @@ func main() {
 		creds := credentials.NewStaticCredentials(accessKey, secretKey, "")
 		_, err := creds.Get()
 		if err != nil {
-			fmt.Printf("bad credentials: %s", err)
+			logrus.Errorf("bad credentials: %s", err)
 		}
 		cfg := aws.NewConfig().WithEndpoint(endpointStr).WithDisableSSL(true).WithCredentials(creds).WithS3ForcePathStyle(true)
 		if len(regionStr) > 0 {
@@ -54,7 +55,7 @@ func main() {
 		creds = credentials.NewStaticCredentials(accessKey2, secretKey2, "")
 		_, err = creds.Get()
 		if err != nil {
-			fmt.Printf("bad credentials: %s", err)
+			logrus.Errorf("bad credentials: %s", err)
 		}
 		cfg = aws.NewConfig().WithEndpoint(endpointStr).WithDisableSSL(true).WithCredentials(creds).WithS3ForcePathStyle(true)
 		if len(regionStr) > 0 {
