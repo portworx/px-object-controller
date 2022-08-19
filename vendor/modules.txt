@@ -168,6 +168,7 @@ github.com/google/go-cmp/cmp/internal/value
 github.com/google/gofuzz
 github.com/google/gofuzz/bytesource
 # github.com/google/uuid v1.3.0
+## explicit
 github.com/google/uuid
 # github.com/googleapis/gnostic v0.5.1
 github.com/googleapis/gnostic/compiler

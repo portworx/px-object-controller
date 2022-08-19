@@ -1,0 +1,7 @@
+apiVersion: object.portworx.io/v1alpha1
+kind: PXBucketClaim
+metadata:
+  name: fb-pbc-2
+  namespace: default
+spec:
+  bucketClassName: pbclass-fb
