@@ -29,41 +29,36 @@ spec:
           - name: S3_ACCESS_KEY_1
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-s3-pba
+                  name: px-os-credentials-fb-pba
                   key: access-key-id
           - name: S3_SECRET_KEY_1
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-s3-pba
+                  name: px-os-credentials-fb-pba
                   key: secret-access-key
           - name: S3_BUCKET_NAME_1
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-s3-pba
+                  name: px-os-credentials-fb-pba
                   key: bucket-id
           - name: S3_ACCESS_KEY_2
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-s3-pba-2
+                  name: px-os-credentials-fb-pba-2
                   key: access-key-id
           - name: S3_SECRET_KEY_2
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-s3-pba-2
+                  name: px-os-credentials-fb-pba-2
                   key: secret-access-key
           - name: S3_BUCKET_NAME_2
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-s3-pba-2
+                  name: px-os-credentials-fb-pba-2
                   key: bucket-id
           - name: S3_ENDPOINT
             valueFrom:
                 secretKeyRef:
-                  name: px-os-credentials-s3-pba
+                  name: px-os-credentials-fb-pba
                   key: endpoint
-          - name: S3_REGION
-            valueFrom:
-                secretKeyRef:
-                  name: px-os-credentials-s3-pba
-                  key: region
     

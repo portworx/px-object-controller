@@ -15,6 +15,11 @@ import (
 )
 
 func main() {
+	const (
+		S3            = "s3"
+		DefaultRegion = "default"
+	)
+
 	accessKey := os.Getenv("S3_ACCESS_KEY_1")
 	secretKey := os.Getenv("S3_SECRET_KEY_1")
 	bucketName := os.Getenv(("S3_BUCKET_NAME_1"))
@@ -30,7 +35,13 @@ func main() {
 		if err != nil {
 			fmt.Printf("bad credentials: %s", err)
 		}
-		cfg := aws.NewConfig().WithEndpoint(endpointStr).WithRegion(regionStr).WithDisableSSL(true).WithCredentials(creds).WithS3ForcePathStyle(true)
+		cfg := aws.NewConfig().WithEndpoint(endpointStr).WithDisableSSL(true).WithCredentials(creds).WithS3ForcePathStyle(true)
+		if len(regionStr) > 0 {
+			cfg = cfg.WithRegion(regionStr)
+		} else {
+			cfg = cfg.WithRegion(DefaultRegion)
+		}
+
 		svc := s3.New(session.New(), cfg)
 		objName := uuid.New().String()
 		fmt.Printf("--- PUT OBJECT %s IN BUCKET %s ---\n", objName, bucketName)
@@ -45,7 +56,12 @@ func main() {
 		if err != nil {
 			fmt.Printf("bad credentials: %s", err)
 		}
-		cfg = aws.NewConfig().WithEndpoint(endpointStr).WithRegion(regionStr).WithDisableSSL(true).WithCredentials(creds).WithS3ForcePathStyle(true)
+		cfg = aws.NewConfig().WithEndpoint(endpointStr).WithDisableSSL(true).WithCredentials(creds).WithS3ForcePathStyle(true)
+		if len(regionStr) > 0 {
+			cfg = cfg.WithRegion(regionStr)
+		} else {
+			cfg = cfg.WithRegion(DefaultRegion)
+		}
 		svc = s3.New(session.New(), cfg)
 		objName = uuid.New().String()
 		fmt.Printf("--- PUT OBJECT %s IN BUCKET %s ---\n", objName, bucketNameTwo)
