@@ -33,6 +33,8 @@ Additionally, you must provide access to the backend bucket service through envi
 
 3. Add environment variables for bucket credentials to your StorageCluster spec:
 
+For S3 setup:
+
     ```
     spec:
         env:
@@ -40,7 +42,7 @@ Additionally, you must provide access to the backend bucket service through envi
             OBJECT_SERVICE_S3_SECRET_ACCESS_KEY: <secret-access-key>
     ```
 
-  _or_
+  _or For Pure FB setup:_
 
     ```
     spec:
