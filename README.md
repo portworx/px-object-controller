@@ -1,3 +1,9 @@
+# 🚨 This Repo has been ARCHIVED and MIGRATED to Github Enterprise(GHE) Cloud!!!
+
+For future development, please [follow the GHE dev setup guidance](https://portworx.atlassian.net/wiki/spaces/~63699b9bd3f3a7ad527af89c/pages/2810118151/migration+guidance+How+to+set+up+local+Git+environment+for+both+GHE+SaaS+and+GH+team+Edition) to work in the migrated repo https://github.com/pure-px/px-object-controller from GHE with your pure storgae Github account (You should login via Okta tile) instead. 
+
+<img width="433" alt="image" src="https://github.com/portworx/kubectl-ssh/assets/131804797/bcb85bcd-a731-4b86-8274-3ae3b7487c5f">
+
 # px-object-controller
 
 ## Building
