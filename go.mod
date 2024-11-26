@@ -40,7 +40,7 @@ require (
 
 replace (
 	github.com/kubernetes-incubator/external-storage => github.com/libopenstorage/external-storage v5.1.1-0.20190919185747-9394ee8dd536+incompatible
-	github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220707215604-afbea03c04c5
+	github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20221025212856-bc6579d2592c
 
 	// Replacing k8s.io dependencies is required if a dependency or any dependency of a dependency
 	// depends on k8s.io/kubernetes. See https://github.com/kubernetes/kubernetes/issues/79384#issuecomment-505725449

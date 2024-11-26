@@ -225,7 +225,7 @@ github.com/libopenstorage/gossip/pkg/probation
 github.com/libopenstorage/gossip/proto
 github.com/libopenstorage/gossip/proto/state
 github.com/libopenstorage/gossip/types
-# github.com/libopenstorage/openstorage v9.4.20+incompatible => github.com/libopenstorage/openstorage v1.0.1-0.20220707215604-afbea03c04c5
+# github.com/libopenstorage/openstorage v9.4.20+incompatible => github.com/libopenstorage/openstorage v1.0.1-0.20221025212856-bc6579d2592c
 ## explicit
 github.com/libopenstorage/openstorage/alerts
 github.com/libopenstorage/openstorage/api
@@ -368,10 +368,6 @@ github.com/vbatts/tar-split/tar/storage
 ## explicit
 github.com/zoido/yag-config
 github.com/zoido/yag-config/value
-# go.pedge.io/pb v0.0.0-20171203174523-dbc791b8a69c
-go.pedge.io/pb/go/google/protobuf
-# go.pedge.io/proto v0.0.0-20170422232847-c5da4db108f6
-go.pedge.io/proto/time
 # golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/ed25519/internal/edwards25519
@@ -764,7 +760,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
 # github.com/kubernetes-incubator/external-storage => github.com/libopenstorage/external-storage v5.1.1-0.20190919185747-9394ee8dd536+incompatible
-# github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20220707215604-afbea03c04c5
+# github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20221025212856-bc6579d2592c
 # k8s.io/api => k8s.io/api v0.21.0
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.0
 # k8s.io/apimachinery => k8s.io/apimachinery v0.21.0
