@@ -761,6 +761,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 sigs.k8s.io/yaml
 # github.com/kubernetes-incubator/external-storage => github.com/libopenstorage/external-storage v5.1.1-0.20190919185747-9394ee8dd536+incompatible
 # github.com/libopenstorage/openstorage => github.com/libopenstorage/openstorage v1.0.1-0.20221025212856-bc6579d2592c
+# go.pedge.io/time => github.com/libopenstorage/openstorage/pkg/proto/time v1.0.1-0.20221025212856-bc6579d2592c
 # k8s.io/api => k8s.io/api v0.21.0
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.0
 # k8s.io/apimachinery => k8s.io/apimachinery v0.21.0
